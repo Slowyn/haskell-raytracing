@@ -6,9 +6,8 @@ My take on Raytracing based on (Peter Shirley's Ray Tracing The Next Week)[https
 
 # TODO
 
-- [] Add basic readme
+- [x] Add basic readme
 - [] Render basic image in PPM
-- [] 
 - [] Better description and readme
 - [] table of content
 - [] Description of prerequisites for project
