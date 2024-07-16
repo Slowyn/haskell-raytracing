@@ -1,6 +1,6 @@
 # Raytracing in Haskell
 
-My take on Raytracing based on (Peter Shirley's Ray Tracing The Next Week)[https://raytracing.github.io/books/RayTracingInOneWeekend.html]
+My take on Raytracing based on [Peter Shirley's Ray Tracing The Next Week](https://raytracing.github.io/books/RayTracingInOneWeekend.html)
 
 ---
 
