@@ -8,7 +8,7 @@ My take on Raytracing based on [Peter Shirley's Ray Tracing The Next Week](https
 
 - [x] Add basic readme
 - [x] Render basic image in PPM
-- [ ] Render output image in JPEG
+- [x] Render output image in JPEG
 - [ ] Better description and readme
 - [ ] table of content
 - [ ] Description of prerequisites for project
