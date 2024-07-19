@@ -1,6 +1,6 @@
 module Vec3
   ( Vec3 (..),
-    TVec3,
+    CVec3,
   )
 where
 
