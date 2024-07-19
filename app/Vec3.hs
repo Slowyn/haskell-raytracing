@@ -97,19 +97,15 @@ class Vec3 v where
   invert v = origin <-> v
   {-# INLINE invert #-}
 
-data TVec3 = TVec3
-  { x :: Double,
-    y :: Double,
-    z :: Double
-  }
+data CVec3 = CVec3 !Double !Double !Double
   deriving (Eq)
 
-instance Vec3 TVec3 where
-  fromXYZ :: (Double, Double, Double) -> TVec3
-  fromXYZ (x, y, z) = TVec3 {x, y, z}
-  toXYZ TVec3 {x, y, z} = (x, y, z)
+instance Vec3 CVec3 where
+  fromXYZ :: (Double, Double, Double) -> CVec3
+  fromXYZ (x, y, z) = CVec3 x y z
+  toXYZ (CVec3 x y z) = (x, y, z)
 
-instance Show TVec3 where
+instance Show CVec3 where
   show v = "Vec3(" ++ show x ++ ", " ++ show y ++ ", " ++ show z ++ ")"
     where
       (x, y, z) = toXYZ v
