@@ -1,43 +1,32 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+
 module Main where
 
-import GHC.Base
-import Vec3
+import Codec.Picture
 
-data P3 = P3
-  { width :: Int,
-    height :: Int,
-    imageData :: List (Int, Int, Int)
-  }
+width :: Int
+width = 256
 
-getP3Row :: Int -> Int -> Int -> Int -> String
-getP3Row w h i j =
-  let r :: Double = fromIntegral i / fromIntegral (w - 1)
-      g :: Double = fromIntegral j / fromIntegral (h - 1)
-      b :: Double = 0.0
-      ir :: Int = floor $ 255.999 * r
-      ig :: Int = floor $ 255.999 * g
-      ib :: Int = floor $ 255.999 * b
-   in (show ir ++ " " ++ show ig ++ " " ++ show ib ++ "\n")
+height :: Int
+height = 256
 
-renderP3 :: P3 -> String
-renderP3 p3 =
-  let w = width p3
-      h = height p3
-      header = "P3\n" ++ show w ++ " " ++ show h ++ "\n255\n"
-      getP3RowWH = getP3Row w h
-      body = unwords [getP3RowWH i j | j <- [0 .. h - 1], i <- [0 .. w - 1]]
-   in header ++ " " ++ body
+getPixelColor :: Int -> Int -> Int -> Int -> PixelRGB8
+getPixelColor width height x y = PixelRGB8 ir ig ib
+  where
+    r :: Double = fromIntegral x / fromIntegral (width - 1)
+    g :: Double = fromIntegral y / fromIntegral (height - 1)
+    b :: Double = 0.0
+    ir :: Pixel8 = floor $ 255.999 * r
+    ig :: Pixel8 = floor $ 255.999 * g
+    ib :: Pixel8 = floor $ 255.999 * b
+
+imageCreate :: Int -> Int -> Image PixelRGB8
+imageCreate width height = generateImage renderPixel width height
+  where
+    renderPixel = getPixelColor width height
 
 main :: IO ()
 main = do
-  let p3 =
-        P3
-          { width = 256,
-            height = 256,
-            imageData = []
-          }
-      str = renderP3 p3
-  let v1 = fromXYZ (15, 1, 2) :: TVec3
-  print v1
-  writeFile "image.ppm" str
+  let image = ImageRGB8 $ imageCreate width height
+  saveJpgImage 100 "test.jpg" image
   putStrLn "Finished"
