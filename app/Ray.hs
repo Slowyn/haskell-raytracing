@@ -1,10 +1,9 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
-module Ray (Ray, RayTrait (..)) where
+module Ray (Ray (..), RayTrait (..), fromCVecs) where
 
-import Vec3 (Vec3 (..))
+import Vec3 (CVec3, Vec3 (..))
 
 -- P(t)=A+tb
 -- Where P is a 3D position along a line in 3D.
@@ -36,3 +35,6 @@ instance (Vec3 v) => RayTrait (Ray v) v where
   getOrigin = rayOrigin
   getDestination :: (Vec3 v) => Ray v -> v
   getDestination = rayDestination
+
+fromCVecs :: CVec3 -> CVec3 -> Ray CVec3
+fromCVecs = fromVecs
