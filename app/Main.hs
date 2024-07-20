@@ -3,6 +3,8 @@
 module Main where
 
 import Codec.Picture
+import Ray (Ray, RayTrait (..))
+import Vec3 (CVec3, Vec3 (..))
 
 width :: Int
 width = 256
@@ -28,5 +30,11 @@ imageCreate width height = generateImage renderPixel width height
 main :: IO ()
 main = do
   let image = ImageRGB8 $ imageCreate width height
+      vec1 :: CVec3
+      vec1 = fromXYZ (1, 2, 3)
+      vec2 :: CVec3
+      vec2 :: CVec3 = fromXYZ (3, 4, 5)
+      exampleRay :: Ray CVec3 = fromVecs vec1 vec2
   saveJpgImage 100 "test.jpg" image
+  print exampleRay
   putStrLn "Finished"
