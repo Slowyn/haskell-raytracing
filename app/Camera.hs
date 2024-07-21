@@ -7,6 +7,7 @@ import Codec.Picture
 import Ray (Ray, RayTrait (..), fromCVecs)
 import Vec3 (CVec3, Vec3 (..))
 
+-- Translate the [0,1] component values to the byte range [0,255]
 vecToPixel :: forall v. (Vec3 v) => v -> PixelRGB8
 vecToPixel v = PixelRGB8 r g b
   where
@@ -16,7 +17,9 @@ vecToPixel v = PixelRGB8 r g b
     b = floor $ 255.999 * z
 
 rayColor :: forall v. (Vec3 v) => Ray v -> PixelRGB8
-rayColor ray = pixel
+rayColor ray
+  | hitSphere (fromXYZ (0, 0, -1)) 0.5 ray = vecToPixel (fromXYZ (1, 0, 0) :: v)
+  | otherwise = pixel
   where
     (_origin, direction) = toVecs ray
     unitDirection = normalize direction
@@ -53,3 +56,13 @@ createCamera imageWidth =
       getRay :: GetRay
       getRay pixelCenter = fromCVecs cameraCenter (pixelCenter <-> cameraCenter)
    in (imageHeight, getPixelCenter, getRay)
+
+hitSphere :: (Vec3 v) => v -> Double -> Ray v -> Bool
+hitSphere center radius ray = discriminant >= 0
+  where
+    (origin, direction) = toVecs ray
+    oc = center <-> origin
+    a = direction .* direction
+    b = -2.0 * (direction .* oc)
+    c = oc .* oc - radius * radius
+    discriminant = b * b - 4 * a * c

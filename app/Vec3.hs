@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+
 module Vec3
   ( Vec3 (..),
     CVec3,
