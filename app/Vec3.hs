@@ -31,6 +31,12 @@ class Vec3 v where
       (x1, y1, z1) = toXYZ v1
       (x2, y2, z2) = toXYZ v2
 
+  -- | Create new vec with function
+  mapVec :: (Double -> Double) -> v -> v
+  mapVec f v1 = fromXYZ (f x, f y, f z)
+    where
+      (x, y, z) = toXYZ v1
+
   -- | Add two vectors.
   (<+>) :: v -> v -> v
   (<+>) = zipWith (+)

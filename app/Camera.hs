@@ -16,17 +16,25 @@ vecToPixel v = PixelRGB8 r g b
     g = floor $ 255.999 * y
     b = floor $ 255.999 * z
 
-rayColor :: forall v. (Vec3 v) => Ray v -> PixelRGB8
-rayColor ray
-  | hitSphere (fromXYZ (0, 0, -1)) 0.5 ray = vecToPixel (fromXYZ (1, 0, 0) :: v)
-  | otherwise = pixel
+rayColorBackground :: forall v. (Vec3 v) => Ray v -> PixelRGB8
+rayColorBackground ray = vecToPixel color
   where
     (_origin, direction) = toVecs ray
     unitDirection = normalize direction
     a = 0.5 * (y unitDirection + 1.0)
     color :: v
     color = fromXYZ (1.0, 1.0, 1.0) .^ (1 - a) <+> fromXYZ (0.5, 0.7, 1.0) .^ a
-    pixel = vecToPixel color
+
+rayColor :: forall v. (Vec3 v) => Ray v -> PixelRGB8
+rayColor ray =
+  let sphereCenter = fromXYZ (0, 0, -1)
+      t = hitSphere sphereCenter 0.5 ray
+   in if t > 0
+        then
+          let n = normalize (at ray t <-> sphereCenter)
+              colorVec = mapVec succ n .^ 0.5
+           in vecToPixel colorVec
+        else rayColorBackground ray
 
 calculateImageHeight :: Int -> Float -> Int
 calculateImageHeight width aspectRatio = max 1 imageHeight
@@ -57,8 +65,8 @@ createCamera imageWidth =
       getRay pixelCenter = fromCVecs cameraCenter (pixelCenter <-> cameraCenter)
    in (imageHeight, getPixelCenter, getRay)
 
-hitSphere :: (Vec3 v) => v -> Double -> Ray v -> Bool
-hitSphere center radius ray = discriminant >= 0
+hitSphere :: (Vec3 v) => v -> Double -> Ray v -> Double
+hitSphere center radius ray = if discriminant < 0 then -1.0 else (-b - sqrt discriminant) / (2 * a)
   where
     (origin, direction) = toVecs ray
     oc = center <-> origin
