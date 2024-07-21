@@ -65,7 +65,9 @@ executable haskell-raytracing
     other-modules:
         Vec3,
         Ray,
-        Camera
+        Camera,
+        Hittable,
+        Sphere
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
