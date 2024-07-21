@@ -66,11 +66,11 @@ createCamera imageWidth =
    in (imageHeight, getPixelCenter, getRay)
 
 hitSphere :: (Vec3 v) => v -> Double -> Ray v -> Double
-hitSphere center radius ray = if discriminant < 0 then -1.0 else (-b - sqrt discriminant) / (2 * a)
+hitSphere center radius ray = if discriminant < 0 then -1.0 else (h - sqrt discriminant) / a
   where
     (origin, direction) = toVecs ray
     oc = center <-> origin
-    a = direction .* direction
-    b = -2.0 * (direction .* oc)
-    c = oc .* oc - radius * radius
-    discriminant = b * b - 4 * a * c
+    a = squareNorm direction
+    h = direction .* oc
+    c = squareNorm oc - radius * radius
+    discriminant = h * h - a * c
