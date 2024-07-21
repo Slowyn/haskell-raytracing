@@ -3,36 +3,24 @@
 
 module Main where
 
+import Camera (GetPixelCenter, GetRay, createCamera, rayColor)
 import Codec.Picture
-import Ray (Ray, fromCVecs)
-import Vec3 (CVec3, Vec3 (..))
 
 width :: Int
-width = 256
+width = 512
 
-height :: Int
-height = 256
-
-getPixelColor :: Int -> Int -> Int -> Int -> PixelRGB8
-getPixelColor width height x y = PixelRGB8 ir ig ib
+imageCreate :: Int -> Int -> GetPixelCenter -> GetRay -> Image PixelRGB8
+imageCreate width height getPixelCenter getRay = generateImage renderPixel width height
   where
-    r :: Double = fromIntegral x / fromIntegral (width - 1)
-    g :: Double = fromIntegral y / fromIntegral (height - 1)
-    b :: Double = 0.0
-    ir :: Pixel8 = floor $ 255.999 * r
-    ig :: Pixel8 = floor $ 255.999 * g
-    ib :: Pixel8 = floor $ 255.999 * b
-
-imageCreate :: Int -> Int -> Image PixelRGB8
-imageCreate width height = generateImage renderPixel width height
-  where
-    renderPixel = getPixelColor width height
+    renderPixel x y = rayColor ray
+      where
+        pixelCenter = getPixelCenter x y
+        ray = getRay pixelCenter
 
 main :: IO ()
 main = do
-  let image = ImageRGB8 $ imageCreate width height
-      exampleRay :: Ray CVec3
-      exampleRay = fromCVecs (fromXYZ (1, 2, 3)) (fromXYZ (1.5, 2.9, 15))
+  let (imageHeight, getPixelCenter, getRay) = createCamera width
+      image = ImageRGB8 $ imageCreate width imageHeight getPixelCenter getRay
+
   saveJpgImage 100 "test.jpg" image
-  print exampleRay
   putStrLn "Finished"

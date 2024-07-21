@@ -15,6 +15,13 @@ class Vec3 v where
   fromXYZ :: (Double, Double, Double) -> v
   toXYZ :: v -> (Double, Double, Double)
 
+  x :: v -> Double
+  x v = x where (x, _, _) = toXYZ v
+  y :: v -> Double
+  y v = y where (_, y, _) = toXYZ v
+  z :: v -> Double
+  z v = z where (_, _, z) = toXYZ v
+
   -- | Zip two vectors elementwise.
   zipWith :: (Double -> Double -> Double) -> v -> v -> v
   zipWith f v1 v2 = fromXYZ (f x1 x2, f y1 y2, f z1 z2)

@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Ray (Ray (..), RayTrait (..), fromCVecs) where
 
@@ -11,12 +12,15 @@ import Vec3 (CVec3, Vec3 (..))
 -- b is the ray direction.
 -- The ray parameter t is a real number
 
-class (Vec3 v) => RayTrait r v where
-  fromVecs :: v -> v -> r
-  getOrigin :: r -> v
-  getDestination :: r -> v
+class (Vec3 (VecType r)) => RayTrait r where
+  type VecType r
+  fromVecs :: VecType r -> VecType r -> r
+  toVecs :: r -> (VecType r, VecType r)
+  toVecs r = (getOrigin r, getDestination r)
+  getOrigin :: r -> VecType r
+  getDestination :: r -> VecType r
 
-  at :: r -> Double -> v
+  at :: r -> Double -> VecType r
   at ray t = getOrigin ray <+> (getDestination ray .^ t)
 
 data Ray v = (Vec3 v) => Ray
@@ -28,7 +32,8 @@ deriving instance (Show v) => Show (Ray v)
 
 deriving instance (Eq v) => Eq (Ray v)
 
-instance (Vec3 v) => RayTrait (Ray v) v where
+instance (Vec3 v) => RayTrait (Ray v) where
+  type VecType (Ray v) = v
   fromVecs :: (Vec3 v) => v -> v -> Ray v
   fromVecs rayOrigin rayDestination = Ray {rayOrigin, rayDestination}
   getOrigin :: (Vec3 v) => Ray v -> v
