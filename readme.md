@@ -15,5 +15,5 @@ My take on Raytracing based on [Peter Shirley's Ray Tracing The Next Week](https
 - [ ] table of content
 - [ ] Description of prerequisites for project
 - [ ] Instructions to run the project 
-- [ ] Demo screenshots
+- [x] Demo screenshots
 - [ ] Implemented Raytracing (!!!)

@@ -1,7 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Hittable (HitRecord, Hittable (..), createHitRecord, solveFrontFaceNorm) where
+module Hittable (HitRecord (..), Hittable (..), createHitRecord, solveFrontFaceNorm) where
 
 import Ray (Ray, RayTrait (getDirection))
 import Vec3

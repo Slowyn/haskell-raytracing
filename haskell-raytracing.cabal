@@ -67,6 +67,7 @@ executable haskell-raytracing
         Ray,
         Camera,
         Hittable,
+        HittableList,
         Sphere
 
     -- LANGUAGE extensions used by modules in this package.

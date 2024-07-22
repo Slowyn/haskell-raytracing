@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Sphere () where
+module Sphere (Sphere (..)) where
 
 import Control.Applicative
 import Control.Monad

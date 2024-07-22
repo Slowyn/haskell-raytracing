@@ -4,6 +4,8 @@
 module Camera (createCamera, rayColor, GetPixelCenter, GetRay) where
 
 import Codec.Picture
+import Hittable (HitRecord (..), Hittable (..))
+import HittableList (HittableList)
 import Ray (Ray, RayTrait (..), fromCVecs)
 import Vec3 (CVec3, Vec3 (..))
 
@@ -25,16 +27,14 @@ rayColorBackground ray = vecToPixel color
     color :: v
     color = fromXYZ (1.0, 1.0, 1.0) .^ (1 - a) <+> fromXYZ (0.5, 0.7, 1.0) .^ a
 
-rayColor :: forall v. (Vec3 v) => Ray v -> PixelRGB8
-rayColor ray =
-  let sphereCenter = fromXYZ (0, 0, -1)
-      t = hitSphere sphereCenter 0.5 ray
-   in if t > 0
-        then
-          let n = normalize (at ray t <-> sphereCenter)
-              colorVec = mapVec succ n .^ 0.5
-           in vecToPixel colorVec
-        else rayColorBackground ray
+-- | Hack to get infinity of Double
+infinity :: Double
+infinity = 1 / 0
+
+rayColor :: forall v. (Vec3 v) => Ray v -> HittableList v -> PixelRGB8
+rayColor ray world = case hit world ray 0 infinity of
+  Just hitRecord -> vecToPixel $ (normal hitRecord <+> fromXYZ (1, 1, 1)) .^ 0.5
+  Nothing -> rayColorBackground ray
 
 calculateImageHeight :: Int -> Float -> Int
 calculateImageHeight width aspectRatio = max 1 imageHeight
@@ -64,13 +64,3 @@ createCamera imageWidth =
       getRay :: GetRay
       getRay pixelCenter = fromCVecs cameraCenter (pixelCenter <-> cameraCenter)
    in (imageHeight, getPixelCenter, getRay)
-
-hitSphere :: (Vec3 v) => v -> Double -> Ray v -> Double
-hitSphere center radius ray = if discriminant < 0 then -1.0 else (h - sqrt discriminant) / a
-  where
-    (origin, direction) = toVecs ray
-    oc = center <-> origin
-    a = squareNorm direction
-    h = direction .* oc
-    c = squareNorm oc - radius * radius
-    discriminant = h * h - a * c
