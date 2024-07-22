@@ -6,7 +6,7 @@ module Sphere () where
 
 import Control.Applicative
 import Control.Monad
-import Hittable (HitRecord, Hittable (..), createHitRecord)
+import Hittable (HitRecord, Hittable (..), createHitRecord, solveFrontFaceNorm)
 import Ray (Ray, RayTrait (..))
 import Vec3 (Vec3 (..))
 
@@ -35,8 +35,9 @@ instance (Vec3 v) => Hittable (Sphere v) where
     root <- findClosestRoot tMin tMax root1 root2
     let t = root
         p = at ray t
-        normal = (p <-> center) /^ radius
-    Just $ createHitRecord p normal t
+        outwardNorm = (p <-> center) /^ radius
+        (frontFace, normal) = solveFrontFaceNorm ray outwardNorm
+    Just $ createHitRecord p normal t frontFace
 
 findClosestRoot :: Double -> Double -> Double -> Double -> Maybe Double
 findClosestRoot tMin tMax root1 root2 = ensure valueInTRange root1 <|> ensure valueInTRange root2
