@@ -37,7 +37,7 @@ instance (Vec3 v) => Hittable (Sphere v) where
         p = at ray t
         outwardNorm = (p <-> center) /^ radius
         (frontFace, normal) = solveFrontFaceNorm ray outwardNorm
-    Just $ createHitRecord p normal t frontFace
+    pure $ createHitRecord p normal t frontFace
 
 findClosestRoot :: Double -> Double -> Double -> Double -> Maybe Double
 findClosestRoot tMin tMax root1 root2 = ensure valueInTRange root1 <|> ensure valueInTRange root2
