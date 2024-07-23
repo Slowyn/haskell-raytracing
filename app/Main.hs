@@ -18,7 +18,7 @@ width = 512
 main :: IO ()
 main = do
   t1 <- getCurrentTime
-  printf "Render started at %s\n" (show t1)
+  printf "Program started at %s\n" (show t1)
   let sphere1 :: Sphere CVec3
       sphere1 = Sphere (fromXYZ (0, 0, -1)) 0.5
       sphere2 :: Sphere CVec3
@@ -29,13 +29,7 @@ main = do
       camera = createCamera width (16.0 / 9.0) 50
       gen = mkStdGen 2024
       image = ImageRGB8 $ render camera world gen
-  t2 <- getCurrentTime
-  printf "Render finished at %s\n" (show t2)
-  printf "Time taken: %s\n" (show $ diffUTCTime t2 t1)
-  t3 <- getCurrentTime
-  printf "Start saving image to jpg file at %s\n" (show $ diffUTCTime t2 t1)
   saveJpgImage 100 "test.jpg" image
-  t4 <- getCurrentTime
-  printf "saving image to jpg file finished in %s\n" (show $ diffUTCTime t4 t3)
+  t2 <- getCurrentTime
   printf "Time taken: %s\n" (show $ diffUTCTime t2 t1)
-  printf "Program finished in %s\n" (show $ diffUTCTime t4 t1)
+  printf "Program finished %s\n" (show t2)
