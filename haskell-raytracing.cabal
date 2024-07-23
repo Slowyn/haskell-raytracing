@@ -78,7 +78,8 @@ executable haskell-raytracing
         base ^>=4.19.1.0,
         JuicyPixels ^>=3.3.9,
         random ^>=1.2.1.2,
-        mtl ^>=2.3.1
+        mtl ^>=2.3.1,
+        time ^>=1.12.2
 
     -- Directories containing source files.
     hs-source-dirs:   app
