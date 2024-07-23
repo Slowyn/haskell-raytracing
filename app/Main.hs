@@ -7,6 +7,7 @@ import Camera (Camera, CameraTrait (..))
 import Codec.Picture
 import HittableList (AnyHittable (AnyHittable), HittableList (..))
 import Sphere (Sphere (..))
+import System.Random (mkStdGen)
 import Vec3 (CVec3, Vec3 (fromXYZ))
 
 width :: Int
@@ -21,8 +22,9 @@ main = do
       world :: HittableList CVec3
       world = HittableList [AnyHittable sphere1, AnyHittable sphere2]
       camera :: Camera CVec3
-      camera = createCamera width (16.0 / 9.0)
-      image = ImageRGB8 $ render camera world
+      camera = createCamera width (16.0 / 9.0) 50
+      gen = mkStdGen 2024
+      image = ImageRGB8 $ render camera world gen
 
   saveJpgImage 100 "test.jpg" image
   putStrLn "Finished"

@@ -76,7 +76,9 @@ executable haskell-raytracing
     -- Other library packages from which modules are imported.
     build-depends:
         base ^>=4.19.1.0,
-        JuicyPixels ^>=3.3.9
+        JuicyPixels ^>=3.3.9,
+        random ^>=1.2.1.2,
+        mtl ^>=2.3.1
 
     -- Directories containing source files.
     hs-source-dirs:   app
