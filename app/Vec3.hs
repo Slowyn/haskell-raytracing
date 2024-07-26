@@ -4,8 +4,9 @@ module Vec3
   ( Vec3 (..),
     CVec3,
     uniformVec3State,
-    uniformVec3InUnitSphere,
     uniformVec3List,
+    uniformVec3InUnitSphere,
+    uniformVec3OnHemiSphere,
   )
 where
 
@@ -162,3 +163,8 @@ uniformVec3InUnitSphere gen = runStateGen gen (uniformVec3UntillM (-1, 1) isVec3
 
 isVec3InUnitSphere :: (Vec3 v) => v -> Bool
 isVec3InUnitSphere = (< 1) . squareNorm
+
+uniformVec3OnHemiSphere :: (Vec3 v) => v -> StdGen -> (v, StdGen)
+uniformVec3OnHemiSphere normal gen = if onUnitSphere .* normal > 0 then (onUnitSphere, g') else (invert onUnitSphere, g')
+  where
+    (onUnitSphere, g') = uniformVec3InUnitSphere gen
