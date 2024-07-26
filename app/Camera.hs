@@ -10,7 +10,7 @@ import Hittable (HitRecord (..), Hittable (..))
 import HittableList (HittableList)
 import Ray (Ray (..), RayTrait (..))
 import System.Random (StdGen)
-import Vec3 (Vec3 (..), uniformVec3State)
+import Vec3 (Vec3 (..), uniformVec3List)
 
 clamp :: (Ord a) => a -> a -> a -> a
 clamp mn mx = max mn . min mx
@@ -110,9 +110,5 @@ instance (Vec3 v) => CameraTrait (Camera v) where
       Camera {width, height, samplesPerPixel, pixelSamplesScale} = camera
       renderPixel x y = vecToPixel color
         where
-          accumulateOffsets :: ([v], StdGen) -> Int -> ([v], StdGen)
-          accumulateOffsets (vectors, gen') _ = (vectors ++ [randomVec], gen'')
-            where
-              (randomVec, gen'') = uniformVec3State (-0.5, 0.5) gen'
-          offsets = fst $ foldl accumulateOffsets ([], gen) [0 .. samplesPerPixel]
+          offsets = uniformVec3List (-0.5, 0.5) samplesPerPixel gen
           color = foldl (<+>) (fromXYZ (0, 0, 0)) (map ((`rayColor` world) . getRay camera x y) offsets) .^ pixelSamplesScale

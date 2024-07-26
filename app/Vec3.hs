@@ -5,9 +5,11 @@ module Vec3
     CVec3,
     uniformVec3State,
     uniformVec3InUnitSphere,
+    uniformVec3List,
   )
 where
 
+import Control.Monad (replicateM)
 import Control.Monad.State
 import System.Random
 import System.Random.Stateful
@@ -145,15 +147,18 @@ uniformVec3State range =
     z <- state $ uniformR range
     pure $ fromXYZ (x, y, z)
 
-uniformVec3MUntill :: (StatefulGen g m, Vec3 v) => (Double, Double) -> (v -> Bool) -> g -> m v
-uniformVec3MUntill range predicate gen = do
+uniformVec3List :: (Vec3 v, RandomGen g) => (Double, Double) -> Int -> g -> [v]
+uniformVec3List range n gen = runStateGen_ gen (replicateM n . uniformVec3M range)
+
+uniformVec3UntillM :: (StatefulGen g m, Vec3 v) => (Double, Double) -> (v -> Bool) -> g -> m v
+uniformVec3UntillM range predicate gen = do
   vecCandidate <- uniformVec3M range gen
   if predicate vecCandidate
     then return vecCandidate
-    else uniformVec3MUntill range predicate gen
+    else uniformVec3UntillM range predicate gen
 
 uniformVec3InUnitSphere :: (Vec3 v) => StdGen -> (v, StdGen)
-uniformVec3InUnitSphere gen = runStateGen gen (uniformVec3MUntill (-1, 1) isVec3InUnitSphere)
+uniformVec3InUnitSphere gen = runStateGen gen (uniformVec3UntillM (-1, 1) isVec3InUnitSphere)
 
 isVec3InUnitSphere :: (Vec3 v) => v -> Bool
 isVec3InUnitSphere = (< 1) . squareNorm
