@@ -3,9 +3,12 @@
 module Vec3
   ( Vec3 (..),
     CVec3,
+    uniformVec3State,
   )
 where
 
+import Control.Monad.State
+import System.Random (StdGen, uniformR)
 import Prelude hiding (zipWith)
 
 class Vec3 v where
@@ -124,3 +127,11 @@ instance Show CVec3 where
   show v = "Vec3(" ++ show x ++ ", " ++ show y ++ ", " ++ show z ++ ")"
     where
       (x, y, z) = toXYZ v
+
+uniformVec3State :: (Vec3 v) => (Double, Double) -> StdGen -> (v, StdGen)
+uniformVec3State range =
+  runState $ do
+    x <- state $ uniformR range
+    y <- state $ uniformR range
+    z <- state $ uniformR range
+    pure $ fromXYZ (x, y, z)

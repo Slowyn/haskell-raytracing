@@ -6,12 +6,11 @@
 module Camera (Camera (..), CameraTrait (..)) where
 
 import Codec.Picture
-import Control.Monad.State
 import Hittable (HitRecord (..), Hittable (..))
 import HittableList (HittableList)
 import Ray (Ray (..), RayTrait (..))
-import System.Random (StdGen, uniformR)
-import Vec3 (Vec3 (..))
+import System.Random (StdGen)
+import Vec3 (Vec3 (..), uniformVec3State)
 
 clamp :: (Ord a) => a -> a -> a -> a
 clamp mn mx = max mn . min mx
@@ -54,14 +53,6 @@ class (Vec3 (CameraVecType c)) => CameraTrait c where
   createCamera :: Int -> Double -> Int -> c
   getRay :: c -> Int -> Int -> CameraVecType c -> Ray (CameraVecType c)
   render :: c -> HittableList (CameraVecType c) -> StdGen -> Image PixelRGB8
-
-uniformVec3State :: (Vec3 v) => (Double, Double) -> StdGen -> (v, StdGen)
-uniformVec3State range =
-  runState $ do
-    x <- state $ uniformR range
-    y <- state $ uniformR range
-    z <- state $ uniformR range
-    pure $ fromXYZ (x, y, z)
 
 data Camera v = (Vec3 v) => Camera
   { aspectRatio :: Double,
