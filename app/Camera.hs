@@ -40,13 +40,16 @@ rayColorBackground ray = color
     color :: v
     color = fromXYZ (1.0, 1.0, 1.0) .^ (1 - a) <+> fromXYZ (0.5, 0.7, 1.0) .^ a
 
-rayColorM :: (StatefulGen g m, Vec3 v) => Ray v -> HittableList v -> g -> m v
-rayColorM ray world gen = case hit world ray 0 infinity of
+rayColorM :: (StatefulGen g m, Vec3 v) => Ray v -> HittableList v -> Int -> g -> m v
+rayColorM ray world depth gen = case hit world ray 0 infinity of
   Just hitRecord -> do
-    direction <- uniformVec3OnHemiSphereM (normal hitRecord) gen
-    let newRay = fromVecs (p hitRecord) direction
-    newRayColor <- rayColorM newRay world gen
-    return $ newRayColor .^ 0.5
+    if depth <= 0
+      then return $ fromXYZ (0, 0, 0)
+      else do
+        direction <- uniformVec3OnHemiSphereM (normal hitRecord) gen
+        let newRay = fromVecs (p hitRecord) direction
+        newRayColor <- rayColorM newRay world (depth - 1) gen
+        return $ newRayColor .^ 0.5
   Nothing -> return $ rayColorBackground ray
 
 calculateImageHeight :: Int -> Double -> Int
@@ -56,7 +59,7 @@ calculateImageHeight width aspectRatio = max 1 imageHeight
 
 class (Vec3 (CameraVecType c)) => CameraTrait c where
   type CameraVecType c
-  createCamera :: Int -> Double -> Int -> c
+  createCamera :: Int -> Double -> Int -> Int -> c
   getRay :: c -> Int -> Int -> CameraVecType c -> Ray (CameraVecType c)
   renderPixelM :: (StatefulGen g m, PrimMonad m) => c -> Int -> Int -> HittableList (CameraVecType c) -> g -> m PixelRGB8
   renderM :: (StatefulGen g m, PrimMonad m) => c -> HittableList (CameraVecType c) -> g -> m (Image PixelRGB8)
@@ -70,13 +73,14 @@ data Camera v = (Vec3 v) => Camera
     center :: v,
     pixel00Loc :: v,
     pixelDeltaU :: v,
-    pixelDeltaV :: v
+    pixelDeltaV :: v,
+    maxDepth :: Int
   }
 
 instance (Vec3 v) => CameraTrait (Camera v) where
   type CameraVecType (Camera v) = v
-  createCamera :: Int -> Double -> Int -> Camera v
-  createCamera width aspectRatio samplesPerPixel =
+  createCamera :: Int -> Double -> Int -> Int -> Camera v
+  createCamera width aspectRatio samplesPerPixel maxDepth =
     Camera
       { aspectRatio,
         width,
@@ -86,7 +90,8 @@ instance (Vec3 v) => CameraTrait (Camera v) where
         center,
         pixel00Loc,
         pixelDeltaU,
-        pixelDeltaV
+        pixelDeltaV,
+        maxDepth
       }
     where
       pixelSamplesScale = 1.0 / fromIntegral samplesPerPixel
@@ -113,10 +118,10 @@ instance (Vec3 v) => CameraTrait (Camera v) where
 
   renderPixelM :: (StatefulGen g m, PrimMonad m) => Camera v -> Int -> Int -> HittableList v -> g -> m PixelRGB8
   renderPixelM camera x y world gen = do
-    let Camera {samplesPerPixel, pixelSamplesScale} = camera
+    let Camera {samplesPerPixel, pixelSamplesScale, maxDepth} = camera
     offsets <- uniformVec3ListM (-0.5, 0.5) samplesPerPixel gen
     let rays = map (getRay camera x y) offsets
-    colors <- mapM (\ray -> rayColorM ray world gen) rays
+    colors <- mapM (\ray -> rayColorM ray world maxDepth gen) rays
     let averageColor = foldl (<+>) (fromXYZ (0, 0, 0)) colors .^ pixelSamplesScale
     return $ vecToPixel averageColor
 

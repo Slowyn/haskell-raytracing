@@ -27,7 +27,7 @@ main = do
       world :: HittableList CVec3
       world = HittableList [AnyHittable sphere1, AnyHittable sphere2]
       camera :: Camera CVec3
-      camera = createCamera width (16.0 / 9.0) 50
+      camera = createCamera width (16.0 / 9.0) 100 50
   gen <- newIOGenM (mkStdGen 2024)
   image <- renderM camera world gen
   saveJpgImage 100 "test.jpg" (ImageRGB8 image)
