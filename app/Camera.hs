@@ -41,7 +41,7 @@ rayColorBackground ray = color
     color = fromXYZ (1.0, 1.0, 1.0) .^ (1 - a) <+> fromXYZ (0.5, 0.7, 1.0) .^ a
 
 rayColorM :: (StatefulGen g m, Vec3 v) => Ray v -> HittableList v -> Int -> g -> m v
-rayColorM ray world depth gen = case hit world ray 0 infinity of
+rayColorM ray world depth gen = case hit world ray 0.001 infinity of
   Just hitRecord -> do
     if depth <= 0
       then return $ fromXYZ (0, 0, 0)
