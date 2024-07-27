@@ -9,7 +9,7 @@ import Codec.Picture
 import Control.Monad.Primitive (PrimMonad)
 import Hittable (HitRecord (..), Hittable (..))
 import HittableList (HittableList)
-import Random (uniformUnitVec3M, uniformVec3ListM, uniformVec3OnHemiSphereM)
+import Random (uniformUnitVec3M, uniformVec3ListM)
 import Ray (Ray (..), RayTrait (..))
 import System.Random.Stateful (StatefulGen)
 import Vec3 (Vec3 (..))
