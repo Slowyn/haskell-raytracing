@@ -17,15 +17,18 @@ import Vec3 (Vec3 (..))
 clamp :: (Ord a) => a -> a -> a -> a
 clamp mn mx = max mn . min mx
 
+linearToGamma :: Double -> Double
+linearToGamma linearComponent = if linearComponent > 0 then sqrt linearComponent else 0
+
 -- Translate the [0,1] component values to the byte range [0,255]
 vecToPixel :: forall v. (Vec3 v) => v -> PixelRGB8
 vecToPixel v = PixelRGB8 r g b
   where
-    (x, y, z) = toXYZ v
-    clamp01 = clamp 0 1
-    r = floor $ 255.999 * clamp01 x
-    g = floor $ 255.999 * clamp01 y
-    b = floor $ 255.999 * clamp01 z
+    (x, y, z) = toXYZ $ mapVec linearToGamma v
+    clamp01 = clamp 0 0.999
+    r = floor $ 256 * clamp01 x
+    g = floor $ 256 * clamp01 y
+    b = floor $ 256 * clamp01 z
 
 -- | Hack to get infinity of Double
 infinity :: Double
@@ -50,7 +53,7 @@ rayColorM ray world depth gen = case hit world ray 0.001 infinity of
         let direction = normal hitRecord <+> randomUnitVector
         let newRay = fromVecs (p hitRecord) direction
         newRayColor <- rayColorM newRay world (depth - 1) gen
-        return $ newRayColor .^ 0.5
+        return $ newRayColor .^ 0.1
   Nothing -> return $ rayColorBackground ray
 
 calculateImageHeight :: Int -> Double -> Int
