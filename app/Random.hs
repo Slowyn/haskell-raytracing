@@ -3,6 +3,7 @@
 module Random
   ( uniformVec3M,
     uniformVec3ListM,
+    uniformUnitVec3M,
     uniformVec3InUnitSphereM,
     uniformVec3OnHemiSphereM,
   )
@@ -35,10 +36,14 @@ uniformVec3InUnitSphereM = uniformVec3UntillM (-1, 1) isVec3InUnitSphere
 isVec3InUnitSphere :: (Vec3 v) => v -> Bool
 isVec3InUnitSphere = (< 1) . squareNorm
 
+uniformUnitVec3M :: (StatefulGen g m, Vec3 v) => g -> m v
+uniformUnitVec3M gen = do
+  randomUnitVector <- uniformVec3InUnitSphereM gen
+  return $ normalize randomUnitVector
+
 uniformVec3OnHemiSphereM :: (StatefulGen g m, Vec3 v) => v -> g -> m v
 uniformVec3OnHemiSphereM normal gen = do
-  randomUnitVector <- uniformVec3InUnitSphereM gen
-  let onUnitSphere = normalize randomUnitVector
+  onUnitSphere <- uniformUnitVec3M gen
   if onUnitSphere .* normal > 0
     then return onUnitSphere
     else return $ invert onUnitSphere
