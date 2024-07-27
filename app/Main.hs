@@ -9,6 +9,7 @@ import Data.Time.Clock
 import HittableList (AnyHittable (AnyHittable), HittableList (..))
 import Sphere (Sphere (..))
 import System.Random (mkStdGen)
+import System.Random.Stateful (newIOGenM)
 import Text.Printf
 import Vec3 (CVec3, Vec3 (fromXYZ))
 
@@ -27,9 +28,9 @@ main = do
       world = HittableList [AnyHittable sphere1, AnyHittable sphere2]
       camera :: Camera CVec3
       camera = createCamera width (16.0 / 9.0) 50
-      gen = mkStdGen 2024
-      image = ImageRGB8 $ render camera world gen
-  saveJpgImage 100 "test.jpg" image
+  gen <- newIOGenM (mkStdGen 2024)
+  image <- renderM camera world gen
+  saveJpgImage 100 "test.jpg" (ImageRGB8 image)
   t2 <- getCurrentTime
   printf "Time taken: %s\n" (show $ diffUTCTime t2 t1)
   printf "Program finished %s\n" (show t2)

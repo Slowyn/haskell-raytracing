@@ -3,17 +3,9 @@
 module Vec3
   ( Vec3 (..),
     CVec3,
-    uniformVec3State,
-    uniformVec3List,
-    uniformVec3InUnitSphere,
-    uniformVec3OnHemiSphere,
   )
 where
 
-import Control.Monad (replicateM)
-import Control.Monad.State
-import System.Random
-import System.Random.Stateful
 import Prelude hiding (zipWith)
 
 class Vec3 v where
@@ -132,39 +124,3 @@ instance Show CVec3 where
   show v = "Vec3(" ++ show x ++ ", " ++ show y ++ ", " ++ show z ++ ")"
     where
       (x, y, z) = toXYZ v
-
-uniformVec3M :: (StatefulGen g m, Vec3 v) => (Double, Double) -> g -> m v
-uniformVec3M range gen = do
-  x <- uniformRM range gen
-  y <- uniformRM range gen
-  z <- uniformRM range gen
-  pure $ fromXYZ (x, y, z)
-
-uniformVec3State :: (Vec3 v, RandomGen g) => (Double, Double) -> g -> (v, g)
-uniformVec3State range =
-  runState $ do
-    x <- state $ uniformR range
-    y <- state $ uniformR range
-    z <- state $ uniformR range
-    pure $ fromXYZ (x, y, z)
-
-uniformVec3List :: (Vec3 v, RandomGen g) => (Double, Double) -> Int -> g -> [v]
-uniformVec3List range n gen = runStateGen_ gen (replicateM n . uniformVec3M range)
-
-uniformVec3UntillM :: (StatefulGen g m, Vec3 v) => (Double, Double) -> (v -> Bool) -> g -> m v
-uniformVec3UntillM range predicate gen = do
-  vecCandidate <- uniformVec3M range gen
-  if predicate vecCandidate
-    then return vecCandidate
-    else uniformVec3UntillM range predicate gen
-
-uniformVec3InUnitSphere :: (Vec3 v) => StdGen -> (v, StdGen)
-uniformVec3InUnitSphere gen = runStateGen gen (uniformVec3UntillM (-1, 1) isVec3InUnitSphere)
-
-isVec3InUnitSphere :: (Vec3 v) => v -> Bool
-isVec3InUnitSphere = (< 1) . squareNorm
-
-uniformVec3OnHemiSphere :: (Vec3 v) => v -> StdGen -> (v, StdGen)
-uniformVec3OnHemiSphere normal gen = if onUnitSphere .* normal > 0 then (onUnitSphere, g') else (invert onUnitSphere, g')
-  where
-    (onUnitSphere, g') = uniformVec3InUnitSphere gen

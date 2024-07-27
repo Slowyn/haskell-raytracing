@@ -6,11 +6,13 @@
 module Camera (Camera (..), CameraTrait (..)) where
 
 import Codec.Picture
+import Control.Monad.Primitive (PrimMonad)
 import Hittable (HitRecord (..), Hittable (..))
 import HittableList (HittableList)
+import Random (uniformVec3ListM, uniformVec3OnHemiSphereM)
 import Ray (Ray (..), RayTrait (..))
-import System.Random (StdGen)
-import Vec3 (Vec3 (..), uniformVec3List)
+import System.Random.Stateful (StatefulGen)
+import Vec3 (Vec3 (..))
 
 clamp :: (Ord a) => a -> a -> a -> a
 clamp mn mx = max mn . min mx
@@ -25,6 +27,10 @@ vecToPixel v = PixelRGB8 r g b
     g = floor $ 255.999 * clamp01 y
     b = floor $ 255.999 * clamp01 z
 
+-- | Hack to get infinity of Double
+infinity :: Double
+infinity = 1 / 0
+
 rayColorBackground :: forall v. (Vec3 v) => Ray v -> v
 rayColorBackground ray = color
   where
@@ -34,14 +40,14 @@ rayColorBackground ray = color
     color :: v
     color = fromXYZ (1.0, 1.0, 1.0) .^ (1 - a) <+> fromXYZ (0.5, 0.7, 1.0) .^ a
 
--- | Hack to get infinity of Double
-infinity :: Double
-infinity = 1 / 0
-
-rayColor :: forall v. (Vec3 v) => Ray v -> HittableList v -> v
-rayColor ray world = case hit world ray 0 infinity of
-  Just hitRecord -> (normal hitRecord <+> fromXYZ (1, 1, 1)) .^ 0.5
-  Nothing -> rayColorBackground ray
+rayColorM :: (StatefulGen g m, Vec3 v) => Ray v -> HittableList v -> g -> m v
+rayColorM ray world gen = case hit world ray 0 infinity of
+  Just hitRecord -> do
+    direction <- uniformVec3OnHemiSphereM (normal hitRecord) gen
+    let newRay = fromVecs (p hitRecord) direction
+    newRayColor <- rayColorM newRay world gen
+    return $ newRayColor .^ 0.5
+  Nothing -> return $ rayColorBackground ray
 
 calculateImageHeight :: Int -> Double -> Int
 calculateImageHeight width aspectRatio = max 1 imageHeight
@@ -52,7 +58,8 @@ class (Vec3 (CameraVecType c)) => CameraTrait c where
   type CameraVecType c
   createCamera :: Int -> Double -> Int -> c
   getRay :: c -> Int -> Int -> CameraVecType c -> Ray (CameraVecType c)
-  render :: c -> HittableList (CameraVecType c) -> StdGen -> Image PixelRGB8
+  renderPixelM :: (StatefulGen g m, PrimMonad m) => c -> Int -> Int -> HittableList (CameraVecType c) -> g -> m PixelRGB8
+  renderM :: (StatefulGen g m, PrimMonad m) => c -> HittableList (CameraVecType c) -> g -> m (Image PixelRGB8)
 
 data Camera v = (Vec3 v) => Camera
   { aspectRatio :: Double,
@@ -104,11 +111,17 @@ instance (Vec3 v) => CameraTrait (Camera v) where
       origin = center
       direction = pixelSample <-> origin
 
-  render :: Camera v -> HittableList v -> StdGen -> Image PixelRGB8
-  render camera world gen = generateImage renderPixel width height
-    where
-      Camera {width, height, samplesPerPixel, pixelSamplesScale} = camera
-      renderPixel x y = vecToPixel color
-        where
-          offsets = uniformVec3List (-0.5, 0.5) samplesPerPixel gen
-          color = foldl (<+>) (fromXYZ (0, 0, 0)) (map ((`rayColor` world) . getRay camera x y) offsets) .^ pixelSamplesScale
+  renderPixelM :: (StatefulGen g m, PrimMonad m) => Camera v -> Int -> Int -> HittableList v -> g -> m PixelRGB8
+  renderPixelM camera x y world gen = do
+    let Camera {samplesPerPixel, pixelSamplesScale} = camera
+    offsets <- uniformVec3ListM (-0.5, 0.5) samplesPerPixel gen
+    let rays = map (getRay camera x y) offsets
+    colors <- mapM (\ray -> rayColorM ray world gen) rays
+    let averageColor = foldl (<+>) (fromXYZ (0, 0, 0)) colors .^ pixelSamplesScale
+    return $ vecToPixel averageColor
+
+  renderM :: (StatefulGen g m, PrimMonad m) => Camera v -> HittableList v -> g -> m (Image PixelRGB8)
+  renderM camera world gen = do
+    let Camera {width, height} = camera
+        renderPixel x y = renderPixelM camera x y world gen
+    withImage width height renderPixel
