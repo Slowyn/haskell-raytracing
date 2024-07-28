@@ -8,7 +8,7 @@ import Codec.Picture
 import Data.Time.Clock
 import HittableList (HittableList (..), SomeHittable (SomeHittable))
 import Lambertian (Lambertian (..))
-import Metal (Metal (..))
+import Metal (mkMetal)
 import Sphere (mkSphere)
 import System.Random (mkStdGen)
 import System.Random.Stateful (newIOGenM)
@@ -24,8 +24,8 @@ main = do
   printf "Program started at %s\n" (show t1)
   let materialGround = Lambertian $ fromXYZ (0.8, 0.8, 0)
       materialCenter = Lambertian $ fromXYZ (0.1, 0.2, 0.5)
-      materialLeft = Metal $ fromXYZ (0.8, 0.8, 0.8)
-      materialRight = Metal $ fromXYZ (0.8, 0.6, 0.2)
+      materialLeft = mkMetal (fromXYZ (0.8, 0.8, 0.8)) 0.3
+      materialRight = mkMetal (fromXYZ (0.8, 0.6, 0.2)) 1.0
       world :: HittableList
       world =
         HittableList
