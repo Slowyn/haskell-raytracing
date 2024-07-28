@@ -2,26 +2,25 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Sphere (Sphere (..)) where
+module Sphere (Sphere (..), mkSphere) where
 
 import Control.Applicative
 import Control.Monad
-import Hittable (HitRecord, Hittable (..), createHitRecord, solveFrontFaceNorm)
-import Ray (Ray, RayTrait (..))
-import Vec3 (Vec3 (..))
+import HitRecord (createHitRecord, solveFrontFaceNorm)
+import Hittable (Hittable (..))
+import Material (Material, SomeMaterial (..))
+import Ray (RayTrait (..))
+import Vec3 (V3, Vec3 (..))
 
-data Sphere v = (Vec3 v) => Sphere v Double
+data Sphere m = (Material m) => Sphere m V3 Double
 
-deriving instance (Show v) => Show (Sphere v)
+deriving instance (Show m) => Show (Sphere m)
 
-deriving instance (Eq v) => Eq (Sphere v)
+deriving instance (Eq m) => Eq (Sphere m)
 
-instance (Vec3 v) => Hittable (Sphere v) where
-  type VecType (Sphere v) = v
-
-  hit :: Sphere v -> Ray v -> Double -> Double -> Maybe (HitRecord v)
+instance (Material m) => Hittable (Sphere m) where
   hit sphere ray tMin tMax = do
-    let (Sphere center radius) = sphere
+    let (Sphere material center radius) = sphere
         (origin, direction) = toVecs ray
         oc = center <-> origin
         a = squareNorm direction
@@ -37,7 +36,7 @@ instance (Vec3 v) => Hittable (Sphere v) where
         p = at ray t
         outwardNorm = (p <-> center) /^ radius
         (frontFace, normal) = solveFrontFaceNorm ray outwardNorm
-    pure $ createHitRecord p normal t frontFace
+    pure (createHitRecord p normal t frontFace, SomeMaterial material)
 
 findClosestRoot :: Double -> Double -> Double -> Double -> Maybe Double
 findClosestRoot tMin tMax root1 root2 = ensure valueInTRange root1 <|> ensure valueInTRange root2
@@ -50,3 +49,6 @@ valueInRange tMin tMax t = tMin < t && t < tMax
 
 ensure :: (Alternative f) => (a -> Bool) -> a -> f a
 ensure p a = a <$ guard (p a)
+
+mkSphere :: (Material m) => m -> V3 -> Double -> Sphere m
+mkSphere mat position radius = Sphere mat position (max 0 radius)
