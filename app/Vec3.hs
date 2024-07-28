@@ -2,11 +2,14 @@
 
 module Vec3
   ( Vec3 (..),
-    CVec3,
+    V3,
   )
 where
 
 import Prelude hiding (zipWith)
+
+epsilon :: Double
+epsilon = 1e-8
 
 class Vec3 v where
   -- | Origin point @(0, 0, 0)@.
@@ -50,6 +53,13 @@ class Vec3 v where
   {-# INLINE (<->) #-}
 
   infixl 7 <->
+
+  -- | Multiply two vectors.
+  (<.>) :: v -> v -> v
+  (<.>) = zipWith (*)
+  {-# INLINE (<.>) #-}
+
+  infixl 9 <.>
 
   -- | Cross product.
   (><) :: v -> v -> v
@@ -112,15 +122,20 @@ class Vec3 v where
   invert v = origin <-> v
   {-# INLINE invert #-}
 
-data CVec3 = CVec3 !Double !Double !Double
+  nearZero :: v -> Bool
+  nearZero v = x < epsilon && y < epsilon && z < epsilon
+    where
+      (x, y, z) = toXYZ v
+
+data V3 = V3 !Double !Double !Double
   deriving (Eq)
 
-instance Vec3 CVec3 where
-  fromXYZ :: (Double, Double, Double) -> CVec3
-  fromXYZ (x, y, z) = CVec3 x y z
-  toXYZ (CVec3 x y z) = (x, y, z)
+instance Vec3 V3 where
+  fromXYZ :: (Double, Double, Double) -> V3
+  fromXYZ (x, y, z) = V3 x y z
+  toXYZ (V3 x y z) = (x, y, z)
 
-instance Show CVec3 where
+instance Show V3 where
   show v = "Vec3(" ++ show x ++ ", " ++ show y ++ ", " ++ show z ++ ")"
     where
       (x, y, z) = toXYZ v

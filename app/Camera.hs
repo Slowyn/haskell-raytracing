@@ -7,12 +7,13 @@ module Camera (Camera (..), CameraTrait (..)) where
 
 import Codec.Picture
 import Control.Monad.Primitive (PrimMonad)
-import Hittable (HitRecord (..), Hittable (..))
+import Hittable (Hittable (..))
 import HittableList (HittableList)
-import Random (uniformUnitVec3M, uniformVec3ListM)
+import Material (Material (scatter), SomeMaterial (SomeMaterial))
+import Random (uniformVec3ListM)
 import Ray (Ray (..), RayTrait (..))
 import System.Random.Stateful (StatefulGen)
-import Vec3 (Vec3 (..))
+import Vec3 (V3, Vec3 (..))
 
 clamp :: (Ord a) => a -> a -> a -> a
 clamp mn mx = max mn . min mx
@@ -21,7 +22,7 @@ linearToGamma :: Double -> Double
 linearToGamma linearComponent = if linearComponent > 0 then sqrt linearComponent else 0
 
 -- Translate the [0,1] component values to the byte range [0,255]
-vecToPixel :: forall v. (Vec3 v) => v -> PixelRGB8
+vecToPixel :: V3 -> PixelRGB8
 vecToPixel v = PixelRGB8 r g b
   where
     (x, y, z) = toXYZ $ mapVec linearToGamma v
@@ -34,26 +35,27 @@ vecToPixel v = PixelRGB8 r g b
 infinity :: Double
 infinity = 1 / 0
 
-rayColorBackground :: forall v. (Vec3 v) => Ray v -> v
+rayColorBackground :: Ray -> V3
 rayColorBackground ray = color
   where
     (_origin, direction) = toVecs ray
     unitDirection = normalize direction
     a = 0.5 * (y unitDirection + 1.0)
-    color :: v
     color = fromXYZ (1.0, 1.0, 1.0) .^ (1 - a) <+> fromXYZ (0.5, 0.7, 1.0) .^ a
 
-rayColorM :: (StatefulGen g m, Vec3 v) => Ray v -> HittableList v -> Int -> g -> m v
+rayColorM :: (StatefulGen g m) => Ray -> HittableList -> Int -> g -> m V3
 rayColorM ray world depth gen = case hit world ray 0.001 infinity of
-  Just hitRecord -> do
+  Just (hitRecord, SomeMaterial material) -> do
     if depth <= 0
       then return $ fromXYZ (0, 0, 0)
       else do
-        randomUnitVector <- uniformUnitVec3M gen
-        let direction = normal hitRecord <+> randomUnitVector
-        let newRay = fromVecs (p hitRecord) direction
-        newRayColor <- rayColorM newRay world (depth - 1) gen
-        return $ newRayColor .^ 0.1
+        scatterResult <- scatter material ray hitRecord gen
+        let handlerScattering result = case result of
+              Just (attenuation, scattered) -> do
+                newColor <- rayColorM scattered world (depth - 1) gen
+                pure $ attenuation <.> newColor
+              Nothing -> pure $ fromXYZ (0, 0, 0)
+        handlerScattering scatterResult
   Nothing -> return $ rayColorBackground ray
 
 calculateImageHeight :: Int -> Double -> Int
@@ -61,29 +63,27 @@ calculateImageHeight width aspectRatio = max 1 imageHeight
   where
     imageHeight = floor $ fromIntegral width / aspectRatio
 
-class (Vec3 (CameraVecType c)) => CameraTrait c where
-  type CameraVecType c
+class CameraTrait c where
   createCamera :: Int -> Double -> Int -> Int -> c
-  getRay :: c -> Int -> Int -> CameraVecType c -> Ray (CameraVecType c)
-  renderPixelM :: (StatefulGen g m, PrimMonad m) => c -> Int -> Int -> HittableList (CameraVecType c) -> g -> m PixelRGB8
-  renderM :: (StatefulGen g m, PrimMonad m) => c -> HittableList (CameraVecType c) -> g -> m (Image PixelRGB8)
+  getRay :: c -> Int -> Int -> V3 -> Ray
+  renderPixelM :: (StatefulGen g m, PrimMonad m) => c -> Int -> Int -> HittableList -> g -> m PixelRGB8
+  renderM :: (StatefulGen g m, PrimMonad m) => c -> HittableList -> g -> m (Image PixelRGB8)
 
-data Camera v = (Vec3 v) => Camera
+data Camera = Camera
   { aspectRatio :: Double,
     width :: Int,
     height :: Int,
     samplesPerPixel :: Int,
     pixelSamplesScale :: Double,
-    center :: v,
-    pixel00Loc :: v,
-    pixelDeltaU :: v,
-    pixelDeltaV :: v,
+    center :: V3,
+    pixel00Loc :: V3,
+    pixelDeltaU :: V3,
+    pixelDeltaV :: V3,
     maxDepth :: Int
   }
 
-instance (Vec3 v) => CameraTrait (Camera v) where
-  type CameraVecType (Camera v) = v
-  createCamera :: Int -> Double -> Int -> Int -> Camera v
+instance CameraTrait Camera where
+  createCamera :: Int -> Double -> Int -> Int -> Camera
   createCamera width aspectRatio samplesPerPixel maxDepth =
     Camera
       { aspectRatio,
@@ -104,14 +104,14 @@ instance (Vec3 v) => CameraTrait (Camera v) where
       focalLength = 1.0
       viewportHeight = 2.0
       viewportWidth = viewportHeight * (fromIntegral width / fromIntegral height)
-      viewportU = fromXYZ (viewportWidth, 0, 0) :: v
-      viewportV = fromXYZ (0, -viewportHeight, 0) :: v
+      viewportU = fromXYZ (viewportWidth, 0, 0)
+      viewportV = fromXYZ (0, -viewportHeight, 0)
       pixelDeltaU = viewportU /^ fromIntegral width
       pixelDeltaV = viewportV /^ fromIntegral height
       viewportUpperLeft = center <-> fromXYZ (0, 0, focalLength) <-> viewportU /^ 2 <-> viewportV /^ 2
       pixel00Loc = viewportUpperLeft <+> (pixelDeltaU <+> pixelDeltaV) .^ 0.5
 
-  getRay :: Camera v -> Int -> Int -> v -> Ray v
+  getRay :: Camera -> Int -> Int -> V3 -> Ray
   getRay camera x y offset = fromVecs origin direction
     where
       Camera {center, pixel00Loc, pixelDeltaU, pixelDeltaV} = camera
@@ -120,7 +120,7 @@ instance (Vec3 v) => CameraTrait (Camera v) where
       origin = center
       direction = pixelSample <-> origin
 
-  renderPixelM :: (StatefulGen g m, PrimMonad m) => Camera v -> Int -> Int -> HittableList v -> g -> m PixelRGB8
+  renderPixelM :: (StatefulGen g m, PrimMonad m) => Camera -> Int -> Int -> HittableList -> g -> m PixelRGB8
   renderPixelM camera x y world gen = do
     let Camera {samplesPerPixel, pixelSamplesScale, maxDepth} = camera
     offsets <- uniformVec3ListM (-0.5, 0.5) samplesPerPixel gen
@@ -129,7 +129,7 @@ instance (Vec3 v) => CameraTrait (Camera v) where
     let averageColor = foldl (<+>) (fromXYZ (0, 0, 0)) colors .^ pixelSamplesScale
     return $ vecToPixel averageColor
 
-  renderM :: (StatefulGen g m, PrimMonad m) => Camera v -> HittableList v -> g -> m (Image PixelRGB8)
+  renderM :: (StatefulGen g m, PrimMonad m) => Camera -> HittableList -> g -> m (Image PixelRGB8)
   renderM camera world gen = do
     let Camera {width, height} = camera
         renderPixel x y = renderPixelM camera x y world gen

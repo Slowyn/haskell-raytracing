@@ -1,23 +1,19 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module HittableList (HittableList (..), AnyHittable (..)) where
+module HittableList (HittableList (..), SomeHittable (..)) where
 
 import Control.Applicative
-import Hittable (HitRecord (..), Hittable (..))
-import Ray hiding (VecType)
-import Vec3 (Vec3 (..))
+import HitRecord (HitRecord (..))
+import Hittable (Hittable (..), SomeHittable (..))
+import Material (SomeMaterial)
+import Ray (Ray)
 
--- | Wrapper to organize list of any hittable object
-data AnyHittable v = forall a. (Hittable a, VecType a ~ v) => AnyHittable a
+newtype HittableList = HittableList [SomeHittable]
 
-newtype HittableList v = HittableList [AnyHittable v]
-
-instance (Vec3 v) => Hittable (HittableList v) where
-  type VecType (HittableList v) = v
-
-  hit :: HittableList v -> Ray v -> Double -> Double -> Maybe (HitRecord v)
+instance Hittable HittableList where
+  hit :: HittableList -> Ray -> Double -> Double -> Maybe (HitRecord, SomeMaterial)
   hit (HittableList objects) ray tMin tMax = foldl (closestHit ray tMin) Nothing objects
     where
-      closestHit :: Ray v -> Double -> Maybe (HitRecord v) -> AnyHittable v -> Maybe (HitRecord v)
-      closestHit ray tMin closestSoFar (AnyHittable object) = hit object ray tMin (maybe tMax t closestSoFar) <|> closestSoFar
+      closestHit :: Ray -> Double -> Maybe (HitRecord, SomeMaterial) -> SomeHittable -> Maybe (HitRecord, SomeMaterial)
+      closestHit ray tMin closestSoFar (SomeHittable object) = hit object ray tMin (maybe tMax (t . fst) closestSoFar) <|> closestSoFar
