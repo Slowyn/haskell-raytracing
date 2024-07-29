@@ -9,7 +9,7 @@ import Vec3 (V3, Vec3 (..))
 data Metal = Metal {albedo :: V3, fuzz :: Double}
 
 instance Material Metal where
-  scatter material rayIn hitRecord gen = do
+  scatterM material rayIn hitRecord gen = do
     let reflected = reflect (getDirection rayIn) (normal hitRecord)
     fuzzVec <- (.^ fuzz material) <$> uniformUnitVec3M gen
     let fuzzReflected = reflected <+> fuzzVec

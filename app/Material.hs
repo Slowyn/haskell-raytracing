@@ -10,7 +10,7 @@ import System.Random.Stateful (StatefulGen)
 import Vec3 (V3)
 
 class Material object where
-  scatter ::
+  scatterM ::
     (StatefulGen g m) =>
     object ->
     Ray ->

@@ -9,7 +9,7 @@ import Vec3 (V3, Vec3 (..))
 newtype Lambertian = Lambertian {albedo :: V3}
 
 instance Material Lambertian where
-  scatter material _rayIn hitRecord gen = do
+  scatterM material _rayIn hitRecord gen = do
     randomUnitVector <- uniformUnitVec3M gen
     let scatterDirection = normal hitRecord <+> randomUnitVector
         adjustedDirection = if nearZero scatterDirection then normal hitRecord else scatterDirection

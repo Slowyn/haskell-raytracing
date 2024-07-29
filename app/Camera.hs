@@ -9,7 +9,7 @@ import Codec.Picture
 import Control.Monad.Primitive (PrimMonad)
 import Hittable (Hittable (..))
 import HittableList (HittableList)
-import Material (Material (scatter), SomeMaterial (SomeMaterial))
+import Material (Material (scatterM), SomeMaterial (SomeMaterial))
 import Random (uniformVec3ListM)
 import Ray (Ray (..), RayTrait (..))
 import System.Random.Stateful (StatefulGen)
@@ -49,7 +49,7 @@ rayColorM ray world depth gen = case hit world ray 0.001 infinity of
     if depth <= 0
       then return $ fromXYZ (0, 0, 0)
       else do
-        scatterResult <- scatter material ray hitRecord gen
+        scatterResult <- scatterM material ray hitRecord gen
         let handlerScattering result = case result of
               Just (attenuation, scattered) -> do
                 newColor <- rayColorM scattered world (depth - 1) gen
