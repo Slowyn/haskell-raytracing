@@ -25,14 +25,15 @@ main = do
   printf "Program started at %s\n" (show t1)
   let materialGround = Lambertian $ fromXYZ (0.8, 0.8, 0)
       materialCenter = Lambertian $ fromXYZ (0.1, 0.2, 0.5)
-      materialLeft = Dielectric $ 1.0 / 1.33
+      materialLeft = Dielectric 1.5
+      materialBubble = Dielectric $ 1.0 / 1.5
       materialRight = mkMetal (fromXYZ (0.8, 0.6, 0.2)) 1.0
-      world :: HittableList
       world =
         HittableList
           [ SomeHittable $ mkSphere materialGround (fromXYZ (0, -100.5, -1)) 100,
             SomeHittable $ mkSphere materialCenter (fromXYZ (0, 0, -1.2)) 0.5,
             SomeHittable $ mkSphere materialLeft (fromXYZ (-1, 0, -1)) 0.5,
+            SomeHittable $ mkSphere materialBubble (fromXYZ (-1, 0, -1)) 0.4,
             SomeHittable $ mkSphere materialRight (fromXYZ (1, 0, -1)) 0.5
           ]
       camera :: Camera
