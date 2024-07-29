@@ -2,6 +2,7 @@ module Metal (Metal (..), mkMetal) where
 
 import HitRecord (HitRecord (..))
 import Material (Material (..))
+import Optics (reflect)
 import Random (uniformUnitVec3M)
 import Ray (Ray, RayTrait (..))
 import Vec3 (V3, Vec3 (..))
@@ -16,9 +17,6 @@ instance Material Metal where
     let scattered = fromVecs (p hitRecord) fuzzReflected :: Ray
     let attenuation = albedo material
     return $ if getDirection scattered .* normal hitRecord > 0 then Just (attenuation, scattered) else Nothing
-
-reflect :: V3 -> V3 -> V3
-reflect v n = v <-> n .^ (v .* n) .^ 2
 
 mkMetal :: V3 -> Double -> Metal
 mkMetal albedo fuzz = Metal {albedo, fuzz}

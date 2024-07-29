@@ -75,7 +75,9 @@ executable haskell-raytracing
         Material,
         Lambertian,
         Metal,
-        Object
+        Object,
+        Dielectric,
+        Optics
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

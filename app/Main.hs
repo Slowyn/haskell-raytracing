@@ -6,6 +6,7 @@ module Main where
 import Camera (Camera, CameraTrait (..))
 import Codec.Picture
 import Data.Time.Clock
+import Dielectric (Dielectric (..))
 import HittableList (HittableList (..), SomeHittable (SomeHittable))
 import Lambertian (Lambertian (..))
 import Metal (mkMetal)
@@ -24,7 +25,7 @@ main = do
   printf "Program started at %s\n" (show t1)
   let materialGround = Lambertian $ fromXYZ (0.8, 0.8, 0)
       materialCenter = Lambertian $ fromXYZ (0.1, 0.2, 0.5)
-      materialLeft = mkMetal (fromXYZ (0.8, 0.8, 0.8)) 0.3
+      materialLeft = Dielectric 1.5
       materialRight = mkMetal (fromXYZ (0.8, 0.6, 0.2)) 1.0
       world :: HittableList
       world =
