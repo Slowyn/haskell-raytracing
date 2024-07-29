@@ -11,7 +11,7 @@ newtype Lambertian = Lambertian {albedo :: V3}
 instance Material Lambertian where
   scatter material _rayIn hitRecord gen = do
     randomUnitVector <- uniformUnitVec3M gen
-    let scatterDirection = p hitRecord <+> randomUnitVector
+    let scatterDirection = normal hitRecord <+> randomUnitVector
         adjustedDirection = if nearZero scatterDirection then normal hitRecord else scatterDirection
         scattered = fromVecs (p hitRecord) adjustedDirection :: Ray
         attenuation = albedo material
