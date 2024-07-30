@@ -139,3 +139,9 @@ instance Show V3 where
   show v = "Vec3(" ++ show x ++ ", " ++ show y ++ ", " ++ show z ++ ")"
     where
       (x, y, z) = toXYZ v
+
+instance Semigroup V3 where
+  (<>) = (<+>)
+
+instance Monoid V3 where
+  mempty = origin

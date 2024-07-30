@@ -126,7 +126,7 @@ instance CameraTrait Camera where
     offsets <- uniformVec3ListM (-0.5, 0.5) samplesPerPixel gen
     let rays = map (getRay camera x y) offsets
     colors <- mapM (\ray -> rayColorM ray world maxDepth gen) rays
-    let averageColor = foldl (<+>) (fromXYZ (0, 0, 0)) colors .^ pixelSamplesScale
+    let averageColor = mconcat colors .^ pixelSamplesScale
     return $ vecToPixel averageColor
 
   renderM :: (StatefulGen g m, PrimMonad m) => Camera -> HittableList -> g -> m (Image PixelRGB8)
