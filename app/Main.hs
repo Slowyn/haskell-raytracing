@@ -28,6 +28,9 @@ main = do
       materialLeft = Dielectric 1.5
       materialBubble = Dielectric $ 1.0 / 1.5
       materialRight = mkMetal (fromXYZ (0.8, 0.6, 0.2)) 1.0
+      lookFrom = fromXYZ (-2, 2, 1)
+      lookAt = fromXYZ (0, 0, -1)
+      vUp = fromXYZ (0, 1, 0)
       world =
         HittableList
           [ SomeHittable $ mkSphere materialGround (fromXYZ (0, -100.5, -1)) 100,
@@ -36,8 +39,7 @@ main = do
             SomeHittable $ mkSphere materialBubble (fromXYZ (-1, 0, -1)) 0.4,
             SomeHittable $ mkSphere materialRight (fromXYZ (1, 0, -1)) 0.5
           ]
-      camera :: Camera
-      camera = createCamera width (16.0 / 9.0) 100 50
+      camera = createCamera width (16.0 / 9.0) 20 lookFrom lookAt vUp 100 50 :: Camera
   gen <- newIOGenM (mkStdGen 2024)
   image <- renderM camera world gen
   saveJpgImage 100 "test.jpg" (ImageRGB8 image)

@@ -64,7 +64,7 @@ calculateImageHeight width aspectRatio = max 1 imageHeight
     imageHeight = floor $ fromIntegral width / aspectRatio
 
 class CameraTrait c where
-  createCamera :: Int -> Double -> Int -> Int -> c
+  createCamera :: Int -> Double -> Int -> V3 -> V3 -> V3 -> Int -> Int -> c
   getRay :: c -> Int -> Int -> V3 -> Ray
   renderPixelM :: (StatefulGen g m, PrimMonad m) => c -> Int -> Int -> HittableList -> g -> m PixelRGB8
   renderM :: (StatefulGen g m, PrimMonad m) => c -> HittableList -> g -> m (Image PixelRGB8)
@@ -79,12 +79,16 @@ data Camera = Camera
     pixel00Loc :: V3,
     pixelDeltaU :: V3,
     pixelDeltaV :: V3,
-    maxDepth :: Int
+    maxDepth :: Int,
+    vfov :: Int,
+    lookFrom :: V3,
+    looktAt :: V3,
+    vUp :: V3
   }
 
 instance CameraTrait Camera where
-  createCamera :: Int -> Double -> Int -> Int -> Camera
-  createCamera width aspectRatio samplesPerPixel maxDepth =
+  createCamera :: Int -> Double -> Int -> V3 -> V3 -> V3 -> Int -> Int -> Camera
+  createCamera width aspectRatio vfov lookFrom looktAt vUp samplesPerPixel maxDepth =
     Camera
       { aspectRatio,
         width,
@@ -95,20 +99,29 @@ instance CameraTrait Camera where
         pixel00Loc,
         pixelDeltaU,
         pixelDeltaV,
-        maxDepth
+        maxDepth,
+        vfov,
+        lookFrom,
+        looktAt,
+        vUp
       }
     where
+      theta = degreeToRad (fromIntegral vfov)
+      h = tan (theta / 2)
       pixelSamplesScale = 1.0 / fromIntegral samplesPerPixel
       height = calculateImageHeight width aspectRatio
-      center = fromXYZ (0, 0, 0)
-      focalLength = 1.0
-      viewportHeight = 2.0
+      center = lookFrom
+      focalLength = norm (lookFrom <-> looktAt)
+      w = normalize (lookFrom <-> looktAt)
+      u = normalize (vUp >< w)
+      v = w >< u
+      viewportHeight = 2.0 * h * focalLength
       viewportWidth = viewportHeight * (fromIntegral width / fromIntegral height)
-      viewportU = fromXYZ (viewportWidth, 0, 0)
-      viewportV = fromXYZ (0, -viewportHeight, 0)
+      viewportU = u .^ viewportWidth
+      viewportV = invert v .^ viewportHeight
       pixelDeltaU = viewportU /^ fromIntegral width
       pixelDeltaV = viewportV /^ fromIntegral height
-      viewportUpperLeft = center <-> fromXYZ (0, 0, focalLength) <-> viewportU /^ 2 <-> viewportV /^ 2
+      viewportUpperLeft = center <-> w .^ focalLength <-> viewportU /^ 2 <-> viewportV /^ 2
       pixel00Loc = viewportUpperLeft <+> (pixelDeltaU <+> pixelDeltaV) .^ 0.5
 
   getRay :: Camera -> Int -> Int -> V3 -> Ray
@@ -134,3 +147,6 @@ instance CameraTrait Camera where
     let Camera {width, height} = camera
         renderPixel x y = renderPixelM camera x y world gen
     withImage width height renderPixel
+
+degreeToRad :: Double -> Double
+degreeToRad degrees = degrees * (pi :: Double) / 180
