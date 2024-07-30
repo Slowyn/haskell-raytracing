@@ -39,7 +39,25 @@ main = do
             SomeHittable $ mkSphere materialBubble (fromXYZ (-1, 0, -1)) 0.4,
             SomeHittable $ mkSphere materialRight (fromXYZ (1, 0, -1)) 0.5
           ]
-      camera = createCamera width (16.0 / 9.0) 20 lookFrom lookAt vUp 100 50 :: Camera
+      aspectRatio = 16.0 / 9.0
+      vfov = 20
+      defocusAngle = 10.0
+      focusDist = 3.4
+      samplesPerPixel = 100
+      maxDepth = 50
+      camera :: Camera
+      camera =
+        createCamera
+          width
+          aspectRatio
+          vfov
+          lookFrom
+          lookAt
+          vUp
+          defocusAngle
+          focusDist
+          samplesPerPixel
+          maxDepth
   gen <- newIOGenM (mkStdGen 2024)
   image <- renderM camera world gen
   saveJpgImage 100 "test.jpg" (ImageRGB8 image)

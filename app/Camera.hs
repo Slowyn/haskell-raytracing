@@ -6,11 +6,12 @@
 module Camera (Camera (..), CameraTrait (..)) where
 
 import Codec.Picture
+import Control.Monad (replicateM)
 import Control.Monad.Primitive (PrimMonad)
 import Hittable (Hittable (..))
 import HittableList (HittableList)
 import Material (Material (scatterM), SomeMaterial (SomeMaterial))
-import Random (uniformVec3ListM)
+import Random (uniformVec3ListM, uniformVec3M, uniformVec3OnUnitDiskM)
 import Ray (Ray (..), RayTrait (..))
 import System.Random.Stateful (StatefulGen)
 import Vec3 (V3, Vec3 (..))
@@ -64,8 +65,8 @@ calculateImageHeight width aspectRatio = max 1 imageHeight
     imageHeight = floor $ fromIntegral width / aspectRatio
 
 class CameraTrait c where
-  createCamera :: Int -> Double -> Int -> V3 -> V3 -> V3 -> Int -> Int -> c
-  getRay :: c -> Int -> Int -> V3 -> Ray
+  createCamera :: Int -> Double -> Int -> V3 -> V3 -> V3 -> Double -> Double -> Int -> Int -> c
+  getRayM :: (StatefulGen g m) => c -> Int -> Int -> g -> m Ray
   renderPixelM :: (StatefulGen g m, PrimMonad m) => c -> Int -> Int -> HittableList -> g -> m PixelRGB8
   renderM :: (StatefulGen g m, PrimMonad m) => c -> HittableList -> g -> m (Image PixelRGB8)
 
@@ -83,12 +84,16 @@ data Camera = Camera
     vfov :: Int,
     lookFrom :: V3,
     looktAt :: V3,
-    vUp :: V3
+    vUp :: V3,
+    defocusAngle :: Double,
+    focusDist :: Double,
+    defocusDiskU :: V3,
+    defocusDiskV :: V3
   }
 
 instance CameraTrait Camera where
-  createCamera :: Int -> Double -> Int -> V3 -> V3 -> V3 -> Int -> Int -> Camera
-  createCamera width aspectRatio vfov lookFrom looktAt vUp samplesPerPixel maxDepth =
+  createCamera :: Int -> Double -> Int -> V3 -> V3 -> V3 -> Double -> Double -> Int -> Int -> Camera
+  createCamera width aspectRatio vfov lookFrom looktAt vUp defocusAngle focusDist samplesPerPixel maxDepth =
     Camera
       { aspectRatio,
         width,
@@ -103,7 +108,11 @@ instance CameraTrait Camera where
         vfov,
         lookFrom,
         looktAt,
-        vUp
+        vUp,
+        defocusAngle,
+        focusDist,
+        defocusDiskU,
+        defocusDiskV
       }
     where
       theta = degreeToRad (fromIntegral vfov)
@@ -111,33 +120,37 @@ instance CameraTrait Camera where
       pixelSamplesScale = 1.0 / fromIntegral samplesPerPixel
       height = calculateImageHeight width aspectRatio
       center = lookFrom
-      focalLength = norm (lookFrom <-> looktAt)
       w = normalize (lookFrom <-> looktAt)
       u = normalize (vUp >< w)
       v = w >< u
-      viewportHeight = 2.0 * h * focalLength
+      viewportHeight = 2.0 * h * focusDist
       viewportWidth = viewportHeight * (fromIntegral width / fromIntegral height)
       viewportU = u .^ viewportWidth
       viewportV = invert v .^ viewportHeight
       pixelDeltaU = viewportU /^ fromIntegral width
       pixelDeltaV = viewportV /^ fromIntegral height
-      viewportUpperLeft = center <-> w .^ focalLength <-> viewportU /^ 2 <-> viewportV /^ 2
+      viewportUpperLeft = center <-> w .^ focusDist <-> viewportU /^ 2 <-> viewportV /^ 2
       pixel00Loc = viewportUpperLeft <+> (pixelDeltaU <+> pixelDeltaV) .^ 0.5
+      defocusRadius = focusDist * tan (degreeToRad $ defocusAngle / 2)
+      defocusDiskU = u .^ defocusRadius
+      defocusDiskV = v .^ defocusRadius
 
-  getRay :: Camera -> Int -> Int -> V3 -> Ray
-  getRay camera x y offset = fromVecs origin direction
-    where
-      Camera {center, pixel00Loc, pixelDeltaU, pixelDeltaV} = camera
-      (x', y', _z') = toXYZ offset
-      pixelSample = pixel00Loc <+> pixelDeltaU .^ (fromIntegral x + x') <+> pixelDeltaV .^ (fromIntegral y + y')
-      origin = center
-      direction = pixelSample <-> origin
+  getRayM camera x y gen = do
+    offset <- uniformVec3M (-1, 1) gen
+    p <- uniformVec3OnUnitDiskM gen
+    let Camera {center, pixel00Loc, pixelDeltaU, pixelDeltaV, defocusDiskU, defocusDiskV, defocusAngle} = camera
+        (x', y', _z') = toXYZ offset
+        (x'', y'', _) = toXYZ p
+        defocusDiskSample = center <+> (defocusDiskU .^ x'') <+> (defocusDiskV .^ y'')
+        pixelSample = pixel00Loc <+> pixelDeltaU .^ (fromIntegral x + x') <+> pixelDeltaV .^ (fromIntegral y + y')
+        origin = if defocusAngle <= 0 then center else defocusDiskSample
+        direction = pixelSample <-> origin
+    pure $ fromVecs origin direction
 
   renderPixelM :: (StatefulGen g m, PrimMonad m) => Camera -> Int -> Int -> HittableList -> g -> m PixelRGB8
   renderPixelM camera x y world gen = do
     let Camera {samplesPerPixel, pixelSamplesScale, maxDepth} = camera
-    offsets <- uniformVec3ListM (-0.5, 0.5) samplesPerPixel gen
-    let rays = map (getRay camera x y) offsets
+    rays <- replicateM samplesPerPixel (getRayM camera x y gen)
     colors <- mapM (\ray -> rayColorM ray world maxDepth gen) rays
     let averageColor = mconcat colors .^ pixelSamplesScale
     return $ vecToPixel averageColor

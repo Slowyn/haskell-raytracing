@@ -6,6 +6,7 @@ module Random
     uniformUnitVec3M,
     uniformVec3InUnitSphereM,
     uniformVec3OnHemiSphereM,
+    uniformVec3OnUnitDiskM,
   )
 where
 
@@ -47,3 +48,12 @@ uniformVec3OnHemiSphereM normal gen = do
   if onUnitSphere .* normal > 0
     then return onUnitSphere
     else return $ invert onUnitSphere
+
+uniformVec3OnUnitDiskM :: (StatefulGen g m) => g -> m V3
+uniformVec3OnUnitDiskM gen = do
+  x <- uniformRM (-1, 1) gen
+  y <- uniformRM (-1, 1) gen
+  let vecCandidate = fromXYZ (x, y, 0)
+  if isVec3InUnitSphere vecCandidate
+    then pure vecCandidate
+    else uniformVec3OnUnitDiskM gen
