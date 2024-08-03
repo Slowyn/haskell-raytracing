@@ -7,7 +7,7 @@ import Random (uniformUnitVec3M)
 import Ray (Ray, RayTrait (..))
 import Vec3 (V3, Vec3 (..))
 
-data Metal = Metal {albedo :: V3, fuzz :: Double}
+data Metal = Metal {albedo :: V3, fuzz :: Double} deriving (Show)
 
 instance Material Metal where
   scatterM material rayIn hitRecord gen = do

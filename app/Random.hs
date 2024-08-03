@@ -24,19 +24,6 @@ uniformVec3M range gen = do
 uniformVec3ListM :: (StatefulGen g m) => (Double, Double) -> Int -> g -> m [V3]
 uniformVec3ListM range n = replicateM n . uniformVec3M range
 
-uniformVec3UntillM :: (StatefulGen g m) => (Double, Double) -> (V3 -> Bool) -> g -> m V3
-uniformVec3UntillM range predicate gen = do
-  vecCandidate <- uniformVec3M range gen
-  if predicate vecCandidate
-    then return vecCandidate
-    else uniformVec3UntillM range predicate gen
-
-uniformVec3InUnitSphereM :: (StatefulGen g m) => g -> m V3
-uniformVec3InUnitSphereM = uniformVec3UntillM (-1, 1) isVec3InUnitSphere
-
-isVec3InUnitSphere :: V3 -> Bool
-isVec3InUnitSphere = (< 1) . squareNorm
-
 uniformUnitVec3M :: (StatefulGen g m) => g -> m V3
 uniformUnitVec3M gen = do
   randomUnitVector <- uniformVec3InUnitSphereM gen
@@ -49,11 +36,15 @@ uniformVec3OnHemiSphereM normal gen = do
     then return onUnitSphere
     else return $ invert onUnitSphere
 
+uniformVec3InUnitSphereM :: (StatefulGen g m) => g -> m V3
+uniformVec3InUnitSphereM gen = do
+  r <- uniformRM (0, 1) gen
+  theta <- uniformRM (0, pi * 2) gen
+  phi <- uniformRM (0, pi * 2) gen
+  pure $ fromXYZ (r * sin theta * cos phi, r * sin theta * sin phi, r * cos theta)
+
 uniformVec3OnUnitDiskM :: (StatefulGen g m) => g -> m V3
 uniformVec3OnUnitDiskM gen = do
-  x <- uniformRM (-1, 1) gen
-  y <- uniformRM (-1, 1) gen
-  let vecCandidate = fromXYZ (x, y, 0)
-  if isVec3InUnitSphere vecCandidate
-    then pure vecCandidate
-    else uniformVec3OnUnitDiskM gen
+  r <- uniformRM (0, 1) gen
+  phi <- uniformRM (0, pi * 2) gen
+  pure $ fromXYZ (r * cos phi, r * sin phi, 0)

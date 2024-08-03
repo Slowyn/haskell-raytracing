@@ -48,15 +48,14 @@ rayColorM :: (StatefulGen g m) => Ray -> HittableList -> Int -> g -> m V3
 rayColorM ray world depth gen = case hit world ray 0.001 infinity of
   Just (hitRecord, SomeMaterial material) -> do
     if depth <= 0
-      then return $ fromXYZ (0, 0, 0)
+      then pure $ fromXYZ (0, 0, 0)
       else do
         scatterResult <- scatterM material ray hitRecord gen
-        let handlerScattering result = case result of
-              Just (attenuation, scattered) -> do
-                newColor <- rayColorM scattered world (depth - 1) gen
-                pure $ attenuation <.> newColor
-              Nothing -> pure $ fromXYZ (0, 0, 0)
-        handlerScattering scatterResult
+        case scatterResult of
+          Just (attenuation, scattered) -> do
+            newColor <- rayColorM scattered world (depth - 1) gen
+            pure $ attenuation <.> newColor
+          Nothing -> pure $ fromXYZ (0, 0, 0)
   Nothing -> return $ rayColorBackground ray
 
 calculateImageHeight :: Int -> Double -> Int
@@ -147,7 +146,6 @@ instance CameraTrait Camera where
         direction = pixelSample <-> origin
     pure $ fromVecs origin direction
 
-  renderPixelM :: (StatefulGen g m, PrimMonad m) => Camera -> Int -> Int -> HittableList -> g -> m PixelRGB8
   renderPixelM camera x y world gen = do
     let Camera {samplesPerPixel, pixelSamplesScale, maxDepth} = camera
     rays <- replicateM samplesPerPixel (getRayM camera x y gen)
@@ -162,4 +160,4 @@ instance CameraTrait Camera where
     withImage width height renderPixel
 
 degreeToRad :: Double -> Double
-degreeToRad degrees = degrees * (pi :: Double) / 180
+degreeToRad degrees = degrees * pi / 180

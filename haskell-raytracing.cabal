@@ -75,7 +75,6 @@ executable haskell-raytracing
         Material,
         Lambertian,
         Metal,
-        Object,
         Dielectric,
         Optics
 

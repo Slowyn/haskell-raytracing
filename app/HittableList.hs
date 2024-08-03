@@ -4,6 +4,7 @@
 module HittableList (HittableList (..), SomeHittable (..)) where
 
 import Control.Applicative
+import Data.List (intercalate)
 import HitRecord (HitRecord (..))
 import Hittable (Hittable (..), SomeHittable (..))
 import Material (SomeMaterial)
@@ -12,8 +13,10 @@ import Ray (Ray)
 newtype HittableList = HittableList [SomeHittable]
 
 instance Hittable HittableList where
-  hit :: HittableList -> Ray -> Double -> Double -> Maybe (HitRecord, SomeMaterial)
   hit (HittableList objects) ray tMin tMax = foldl (closestHit ray tMin) Nothing objects
     where
       closestHit :: Ray -> Double -> Maybe (HitRecord, SomeMaterial) -> SomeHittable -> Maybe (HitRecord, SomeMaterial)
       closestHit ray tMin closestSoFar (SomeHittable object) = hit object ray tMin (maybe tMax (t . fst) closestSoFar) <|> closestSoFar
+
+instance Show HittableList where
+  show (HittableList objects) = "[\n" ++ intercalate "\n" (map show objects) ++ "\n]"

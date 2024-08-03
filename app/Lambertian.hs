@@ -6,7 +6,7 @@ import Random (uniformUnitVec3M)
 import Ray
 import Vec3 (V3, Vec3 (..))
 
-newtype Lambertian = Lambertian {albedo :: V3}
+newtype Lambertian = Lambertian {albedo :: V3} deriving (Show)
 
 instance Material Lambertian where
   scatterM material _rayIn hitRecord gen = do

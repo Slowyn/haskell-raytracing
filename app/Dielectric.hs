@@ -7,7 +7,7 @@ import Ray (RayTrait (..))
 import System.Random.Stateful (UniformRange (uniformRM))
 import Vec3 (Vec3 (..))
 
-newtype Dielectric = Dielectric {refractionIndex :: Double}
+newtype Dielectric = Dielectric {refractionIndex :: Double} deriving (Show)
 
 instance Material Dielectric where
   scatterM material rayIn hitRecord gen = do
