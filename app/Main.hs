@@ -79,7 +79,7 @@ finalScene n gen = do
       material3 = mkMetal (fromXYZ (0.7, 0.6, 0.5)) 0
       sphere3 = mkSphere material3 (fromXYZ (4, 1, 0)) 1.0
       actualMapFn = mapPairs gen
-      halfRange = floor (fromIntegral n / 2)
+      halfRange = floor (fromIntegral n / 2 :: Double)
       (leftN, rightN) = (-halfRange, halfRange)
   let pairs = [(a, b) | a <- [leftN .. rightN], b <- [leftN .. rightN]]
   spheres <- mapM actualMapFn pairs

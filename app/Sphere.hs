@@ -12,7 +12,7 @@ import Material (Material, SomeMaterial (..))
 import Ray (RayTrait (..))
 import Vec3 (V3, Vec3 (..))
 
-data Sphere m = (Material m) => Sphere m V3 Double
+data Sphere m = (Material m) => Sphere !m !V3 !Double
 
 deriving instance (Show m) => Show (Sphere m)
 
