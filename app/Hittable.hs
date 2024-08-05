@@ -7,4 +7,5 @@ import Ray (Ray)
 class Hittable h where
   hit :: h -> Ray -> Double -> Double -> Maybe (HitRecord, SomeMaterial)
 
-data SomeHittable = forall shape. (Hittable shape, Show shape) => SomeHittable shape
+data SomeHittable where
+  MkSomeHittable :: (Hittable a) => a -> SomeHittable

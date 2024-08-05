@@ -36,7 +36,7 @@ instance (Material m) => Hittable (Sphere m) where
         p = at ray t
         outwardNorm = (p <-> center) /^ radius
         (frontFace, normal) = solveFrontFaceNorm ray outwardNorm
-    pure (createHitRecord p normal t frontFace, SomeMaterial material)
+    pure (createHitRecord p normal t frontFace, MkSomeMaterial material)
 
 findClosestRoot :: Double -> Double -> Double -> Double -> Maybe Double
 findClosestRoot tMin tMax root1 root2 = ensure valueInTRange root1 <|> ensure valueInTRange root2

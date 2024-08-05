@@ -7,7 +7,7 @@ import Camera (Camera, CameraTrait (..))
 import Codec.Picture
 import Data.Time.Clock
 import Dielectric (Dielectric (..))
-import HittableList (HittableList (..), SomeHittable (SomeHittable))
+import HittableList (HittableList (..), SomeHittable (..))
 import Lambertian (Lambertian (..))
 import Metal (mkMetal)
 import Random (uniformVec3M)
@@ -64,9 +64,9 @@ mapPairs gen (a, b) = do
   metalColor <- uniformVec3M (0.5, 1) gen
   let center = fromXYZ (fromIntegral a + 0.9 * offsetX, 0.2, fromIntegral b + 0.9 * offsetZ)
   let sphere
-        | chooseMatP < 0.8 = SomeHittable $ mkSphere (Lambertian albedo) center 0.2
-        | chooseMatP < 0.95 = SomeHittable $ mkSphere (mkMetal metalColor 0.5) center 0.2
-        | otherwise = SomeHittable $ mkSphere (Dielectric 1.5) center 0.2
+        | chooseMatP < 0.8 = MkSomeHittable $ mkSphere (Lambertian albedo) center 0.2
+        | chooseMatP < 0.95 = MkSomeHittable $ mkSphere (mkMetal metalColor 0.5) center 0.2
+        | otherwise = MkSomeHittable $ mkSphere (Dielectric 1.5) center 0.2
   return sphere
 
 finalScene :: (StatefulGen g m) => Int -> g -> m HittableList
@@ -85,9 +85,9 @@ finalScene n gen = do
   spheres <- mapM actualMapFn pairs
   return $
     HittableList $
-      [ SomeHittable $ mkSphere materialGround (fromXYZ (0, -1000, -1)) 1000,
-        SomeHittable sphere1,
-        SomeHittable sphere2,
-        SomeHittable sphere3
+      [ MkSomeHittable $ mkSphere materialGround (fromXYZ (0, -1000, -1)) 1000,
+        MkSomeHittable sphere1,
+        MkSomeHittable sphere2,
+        MkSomeHittable sphere3
       ]
         ++ spheres

@@ -18,4 +18,5 @@ class Material object where
     g ->
     m (Maybe (V3, Ray))
 
-data SomeMaterial = forall material. (Material material) => SomeMaterial material
+data SomeMaterial where
+  MkSomeMaterial :: (Material material) => material -> SomeMaterial
