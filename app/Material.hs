@@ -20,3 +20,6 @@ class Material object where
 
 data SomeMaterial where
   MkSomeMaterial :: (Material material) => material -> SomeMaterial
+
+instance Material SomeMaterial where
+  scatterM (MkSomeMaterial material) = scatterM material

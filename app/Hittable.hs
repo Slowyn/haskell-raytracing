@@ -9,3 +9,6 @@ class Hittable h where
 
 data SomeHittable where
   MkSomeHittable :: (Hittable a) => a -> SomeHittable
+
+instance Hittable SomeHittable where
+  hit (MkSomeHittable obj) = hit obj
