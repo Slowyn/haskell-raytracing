@@ -12,8 +12,8 @@ import FoldHittable (FoldHittable (nearestHit))
 import HittableList (HittableList)
 import Material (Material (scatterM), SomeMaterial (MkSomeMaterial))
 import Random (uniformVec3M, uniformVec3OnUnitDiskM)
-import Ray (Ray (..), RayTrait (..))
-import System.Random.Stateful (StatefulGen)
+import Ray (Ray (..), RayTrait (..), mkRay)
+import System.Random.Stateful (StatefulGen, UniformRange (uniformRM))
 import Vec3 (V3, Vec3 (..))
 
 clamp :: (Ord a) => a -> a -> a -> a
@@ -137,6 +137,7 @@ instance CameraTrait Camera where
   getRayM camera x y gen = do
     offset <- uniformVec3M (-1, 1) gen
     p <- uniformVec3OnUnitDiskM gen
+    randomTime :: Double <- uniformRM (0, 1) gen
     let Camera {center, pixel00Loc, pixelDeltaU, pixelDeltaV, defocusDiskU, defocusDiskV, defocusAngle} = camera
         (x', y', _z') = toXYZ offset
         (x'', y'', _) = toXYZ p
@@ -144,7 +145,7 @@ instance CameraTrait Camera where
         pixelSample = pixel00Loc <+> pixelDeltaU .^ (fromIntegral x + x') <+> pixelDeltaV .^ (fromIntegral y + y')
         origin = if defocusAngle <= 0 then center else defocusDiskSample
         direction = pixelSample <-> origin
-    pure $ fromVecs origin direction
+    pure $ mkRay origin direction randomTime
 
   renderPixelM camera x y world gen = do
     let Camera {samplesPerPixel, pixelSamplesScale, maxDepth} = camera

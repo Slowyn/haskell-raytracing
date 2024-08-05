@@ -1,20 +1,23 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Sphere (Sphere (..), mkSphere) where
+module Sphere (Sphere (..), mkSphere, mkMovingSphere) where
 
 import Control.Applicative
 import Control.Monad
 import HitRecord (createHitRecord, solveFrontFaceNorm)
 import Hittable (Hittable (..))
-import Ray (RayTrait (..))
+import Ray (Ray (..), RayTrait (..))
 import Vec3 (V3, Vec3 (..))
 
-data Sphere = Sphere !V3 !Double deriving (Show, Eq)
+data Sphere
+  = Sphere !V3 !Double
+  | MovingSphere !V3 !V3 !V3 !Double
+  deriving (Show, Eq)
 
 instance Hittable Sphere where
   hit sphere ray tMin tMax = do
-    let (Sphere center radius) = sphere
+    let (center, radius) = (centerPosition sphere (time ray), getRadius sphere)
         (origin, direction) = toVecs ray
         oc = center <-> origin
         a = squareNorm direction
@@ -46,3 +49,19 @@ ensure p a = a <$ guard (p a)
 
 mkSphere :: V3 -> Double -> Sphere
 mkSphere position radius = Sphere position (max 0 radius)
+
+mkMovingSphere :: V3 -> V3 -> Double -> Sphere
+mkMovingSphere center1 center2 radius =
+  MovingSphere
+    center1
+    center2
+    (center2 <-> center1)
+    (max 0 radius)
+
+centerPosition :: Sphere -> Double -> V3
+centerPosition (Sphere center _radius) _t = center
+centerPosition (MovingSphere center1 _center2 centerVec _radius) t = center1 <+> centerVec .^ t
+
+getRadius :: Sphere -> Double
+getRadius (Sphere _center radius) = radius
+getRadius (MovingSphere _center1 _center2 _centerVec radius) = radius

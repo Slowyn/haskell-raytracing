@@ -12,7 +12,7 @@ import Lambertian (Lambertian (..))
 import Metal (mkMetal)
 import Object (SomeObject, mkSomeObject)
 import Random (uniformVec3M)
-import Sphere (mkSphere)
+import Sphere (mkMovingSphere, mkSphere)
 import System.Random (mkStdGen)
 import System.Random.Stateful (StatefulGen, newIOGenM, uniformRM)
 import Text.Printf
@@ -64,8 +64,9 @@ mapPairs gen (a, b) = do
   albedo <- (\v -> v <.> v) <$> uniformVec3M (0, 1) gen
   metalColor <- uniformVec3M (0.5, 1) gen
   let center = fromXYZ (fromIntegral a + 0.9 * offsetX, 0.2, fromIntegral b + 0.9 * offsetZ)
+  center2 <- (<+> center) . fromXYZ . (0,,0) <$> uniformRM (0, 1) gen
   let sphere
-        | chooseMatP < 0.8 = mkSomeObject (mkSphere center 0.2) (Lambertian albedo)
+        | chooseMatP < 0.8 = mkSomeObject (mkMovingSphere center center2 0.2) (Lambertian albedo)
         | chooseMatP < 0.95 = mkSomeObject (mkSphere center 0.2) (mkMetal metalColor 0.5)
         | otherwise = mkSomeObject (mkSphere center 0.2) (Dielectric 1.5)
   return sphere
