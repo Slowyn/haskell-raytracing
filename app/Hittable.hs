@@ -8,6 +8,3 @@ class Hittable h where
   hit :: h -> Ray -> Double -> Double -> Maybe (HitRecord, SomeMaterial)
 
 data SomeHittable = forall shape. (Hittable shape, Show shape) => SomeHittable shape
-
-instance Show SomeHittable where
-  show (SomeHittable object) = show object
