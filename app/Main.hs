@@ -7,7 +7,7 @@ import Camera (Camera, CameraTrait (..))
 import Codec.Picture
 import Data.Time.Clock
 import Dielectric (Dielectric (..))
-import HittableList (HittableList (..), SomeHittable (..))
+import HittableList (HittableList (..))
 import Lambertian (Lambertian (..))
 import Metal (mkMetal)
 import Object (SomeObject, mkSomeObject)
@@ -65,20 +65,20 @@ mapPairs gen (a, b) = do
   metalColor <- uniformVec3M (0.5, 1) gen
   let center = fromXYZ (fromIntegral a + 0.9 * offsetX, 0.2, fromIntegral b + 0.9 * offsetZ)
   let sphere
-        | chooseMatP < 0.8 = mkSomeObject (mkSphere (Lambertian albedo) center 0.2) (Lambertian albedo)
-        | chooseMatP < 0.95 = mkSomeObject (mkSphere (mkMetal metalColor 0.5) center 0.2) (mkMetal metalColor 0.5)
-        | otherwise = mkSomeObject (mkSphere (Dielectric 1.5) center 0.2) (Dielectric 1.5)
+        | chooseMatP < 0.8 = mkSomeObject (mkSphere center 0.2) (Lambertian albedo)
+        | chooseMatP < 0.95 = mkSomeObject (mkSphere center 0.2) (mkMetal metalColor 0.5)
+        | otherwise = mkSomeObject (mkSphere center 0.2) (Dielectric 1.5)
   return sphere
 
 finalScene :: (StatefulGen g m) => Int -> g -> m HittableList
 finalScene n gen = do
   let materialGround = Lambertian $ fromXYZ (0.5, 0.5, 0.5)
       material1 = Dielectric 1.5
-      sphere1 = mkSphere material1 (fromXYZ (0, 1, 0)) 1.0
+      sphere1 = mkSphere (fromXYZ (0, 1, 0)) 1.0
       material2 = Lambertian $ fromXYZ (0.4, 0.2, 0.1)
-      sphere2 = mkSphere material2 (fromXYZ (-4, 1, 0)) 1.0
+      sphere2 = mkSphere (fromXYZ (-4, 1, 0)) 1.0
       material3 = mkMetal (fromXYZ (0.7, 0.6, 0.5)) 0
-      sphere3 = mkSphere material3 (fromXYZ (4, 1, 0)) 1.0
+      sphere3 = mkSphere (fromXYZ (4, 1, 0)) 1.0
       actualMapFn = mapPairs gen
       halfRange = floor (fromIntegral n / 2 :: Double)
       (leftN, rightN) = (-halfRange, halfRange)
@@ -86,7 +86,7 @@ finalScene n gen = do
   spheres <- mapM actualMapFn pairs
   return $
     HittableList $
-      [ mkSomeObject (mkSphere materialGround (fromXYZ (0, -1000, -1)) 1000) materialGround,
+      [ mkSomeObject (mkSphere (fromXYZ (0, -1000, -1)) 1000) materialGround,
         mkSomeObject sphere1 material1,
         mkSomeObject sphere2 material2,
         mkSomeObject sphere3 material3

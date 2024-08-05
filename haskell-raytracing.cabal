@@ -77,7 +77,8 @@ executable haskell-raytracing
         Metal,
         Dielectric,
         Optics,
-        Object
+        Object,
+        FoldHittable
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

@@ -1,4 +1,3 @@
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
@@ -8,19 +7,14 @@ import Control.Applicative
 import Control.Monad
 import HitRecord (createHitRecord, solveFrontFaceNorm)
 import Hittable (Hittable (..))
-import Material (Material, SomeMaterial (..))
 import Ray (RayTrait (..))
 import Vec3 (V3, Vec3 (..))
 
-data Sphere m = (Material m) => Sphere !m !V3 !Double
+data Sphere = Sphere !V3 !Double deriving (Show, Eq)
 
-deriving instance (Show m) => Show (Sphere m)
-
-deriving instance (Eq m) => Eq (Sphere m)
-
-instance (Material m) => Hittable (Sphere m) where
+instance Hittable Sphere where
   hit sphere ray tMin tMax = do
-    let (Sphere material center radius) = sphere
+    let (Sphere center radius) = sphere
         (origin, direction) = toVecs ray
         oc = center <-> origin
         a = squareNorm direction
@@ -36,7 +30,7 @@ instance (Material m) => Hittable (Sphere m) where
         p = at ray t
         outwardNorm = (p <-> center) /^ radius
         (frontFace, normal) = solveFrontFaceNorm ray outwardNorm
-    pure (createHitRecord p normal t frontFace, MkSomeMaterial material)
+    pure $ createHitRecord p normal t frontFace
 
 findClosestRoot :: Double -> Double -> Double -> Double -> Maybe Double
 findClosestRoot tMin tMax root1 root2 = ensure valueInTRange root1 <|> ensure valueInTRange root2
@@ -50,5 +44,5 @@ valueInRange tMin tMax t = tMin < t && t < tMax
 ensure :: (Alternative f) => (a -> Bool) -> a -> f a
 ensure p a = a <$ guard (p a)
 
-mkSphere :: (Material m) => m -> V3 -> Double -> Sphere m
-mkSphere mat position radius = Sphere mat position (max 0 radius)
+mkSphere :: V3 -> Double -> Sphere
+mkSphere position radius = Sphere position (max 0 radius)
