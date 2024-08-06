@@ -78,7 +78,9 @@ executable haskell-raytracing
         Dielectric,
         Optics,
         Object,
-        FoldHittable
+        FoldHittable,
+        Aabb,
+        Interval
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

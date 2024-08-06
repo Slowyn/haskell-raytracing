@@ -7,6 +7,7 @@ import Control.Applicative
 import Control.Monad
 import HitRecord (createHitRecord, solveFrontFaceNorm)
 import Hittable (Hittable (..))
+import Interval (Interval (..))
 import Ray (Ray (..), RayTrait (..))
 import Vec3 (V3, Vec3 (..))
 
@@ -16,7 +17,7 @@ data Sphere
   deriving (Show, Eq)
 
 instance Hittable Sphere where
-  hit sphere ray tMin tMax = do
+  hit sphere ray (Interval tMin tMax) = do
     let (center, radius) = (centerPosition sphere (time ray), getRadius sphere)
         (origin, direction) = toVecs ray
         oc = center <-> origin

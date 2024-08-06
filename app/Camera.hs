@@ -10,6 +10,7 @@ import Control.Monad (replicateM)
 import Control.Monad.Primitive (PrimMonad)
 import FoldHittable (FoldHittable (nearestHit))
 import HittableList (HittableList)
+import Interval (Interval (..))
 import Material (Material (scatterM), SomeMaterial (MkSomeMaterial))
 import Random (uniformVec3M, uniformVec3OnUnitDiskM)
 import Ray (Ray (..), RayTrait (..), mkRay)
@@ -45,7 +46,7 @@ rayColorBackground ray = color
     color = fromXYZ (1.0, 1.0, 1.0) .^ (1 - a) <+> fromXYZ (0.5, 0.7, 1.0) .^ a
 
 rayColorM :: (StatefulGen g m) => Ray -> HittableList -> Int -> g -> m V3
-rayColorM ray world depth gen = case nearestHit world ray 0.001 infinity of
+rayColorM ray world depth gen = case nearestHit world ray (Interval 0.001 infinity) of
   Just (hitRecord, MkSomeMaterial material) -> do
     if depth <= 0
       then pure $ fromXYZ (0, 0, 0)
