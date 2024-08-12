@@ -3,16 +3,17 @@ module Aabb
     mkAabb,
     mkAabbIntervals,
     mkAabbPoints,
+    combineAabbs,
     hitBox,
   )
 where
 
 import Control.Applicative
-import Interval (Interval (..), defaultInterval, mkInterval)
+import Interval (Interval (..), defaultInterval, mkInterval, mkInterval')
 import Ray (Ray, RayTrait (..))
 import Vec3 qualified as V
 
-data Aabb = Aabb {x :: !Interval, y :: !Interval, z :: !Interval}
+data Aabb = Aabb {x :: !Interval, y :: !Interval, z :: !Interval} deriving (Show, Eq)
 
 defaultAabb :: Aabb
 defaultAabb = Aabb {x = defaultInterval, y = defaultInterval, z = defaultInterval}
@@ -35,10 +36,28 @@ mkAabbPoints a b = mkAabbIntervals xInterval yInterval zInterval
     yInterval = if V.y a <= V.y b then mkInterval (V.y a) (V.y b) else mkInterval (V.y b) (V.y a)
     zInterval = if V.z a <= V.z b then mkInterval (V.z a) (V.z b) else mkInterval (V.z b) (V.z a)
 
+combineAabbs :: Aabb -> Aabb -> Aabb
+combineAabbs b1 b2 =
+  Aabb
+    { x = mergedXInterval,
+      y = mergedYInterval,
+      z = mergedZInterval
+    }
+  where
+    mergedXInterval = mkInterval' (x b1) (x b2)
+    mergedYInterval = mkInterval' (y b1) (y b2)
+    mergedZInterval = mkInterval' (z b1) (z b2)
+
+mergeIntervals :: Interval -> Interval -> Interval
+mergeIntervals a b = Interval r0 r1
+  where
+    Interval r0 _ = a
+    Interval _ r1 = b
+
 hitBox :: Aabb -> Ray -> Interval -> Maybe Interval
 hitBox bbox rayIn (Interval rayTa rayTb) = do
   let (origin, direction) = toVecs rayIn
-  let go :: Interval -> (V.V3 -> Double) -> Maybe Interval
+      go :: Interval -> (V.V3 -> Double) -> Maybe Interval
       go (Interval a b) comp = do
         let adinv = comp direction
             t0 = (a - comp origin) * adinv

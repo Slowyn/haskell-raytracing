@@ -18,6 +18,8 @@ class Vec3 v where
   {-# INLINE origin #-}
 
   fromXYZ :: (Double, Double, Double) -> v
+  fromValue :: Double -> v
+  fromValue v = fromXYZ (v, v, v)
   toXYZ :: v -> (Double, Double, Double)
 
   x :: v -> Double

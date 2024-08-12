@@ -14,7 +14,7 @@ where
 
 import Data.Ord (clamp)
 
-data Interval = Interval Double Double
+data Interval = Interval Double Double deriving (Show, Eq)
 
 defaultInterval :: Interval
 defaultInterval = Interval 0 0

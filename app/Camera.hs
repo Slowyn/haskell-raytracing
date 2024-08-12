@@ -9,7 +9,6 @@ import Codec.Picture
 import Control.Monad (replicateM)
 import Control.Monad.Primitive (PrimMonad)
 import FoldHittable (FoldHittable (nearestHit))
-import HittableList (HittableList)
 import Interval (Interval (..))
 import Material (Material (scatterM), SomeMaterial (MkSomeMaterial))
 import Random (uniformVec3M, uniformVec3OnUnitDiskM)
@@ -45,7 +44,7 @@ rayColorBackground ray = color
     a = 0.5 * (y unitDirection + 1.0)
     color = fromXYZ (1.0, 1.0, 1.0) .^ (1 - a) <+> fromXYZ (0.5, 0.7, 1.0) .^ a
 
-rayColorM :: (StatefulGen g m) => Ray -> HittableList -> Int -> g -> m V3
+rayColorM :: (StatefulGen g m, FoldHittable w) => Ray -> w -> Int -> g -> m V3
 rayColorM ray world depth gen = case nearestHit world ray (Interval 0.001 infinity) of
   Just (hitRecord, MkSomeMaterial material) -> do
     if depth <= 0
@@ -67,8 +66,8 @@ calculateImageHeight width aspectRatio = max 1 imageHeight
 class CameraTrait c where
   createCamera :: Int -> Double -> Int -> V3 -> V3 -> V3 -> Double -> Double -> Int -> Int -> c
   getRayM :: (StatefulGen g m) => c -> Int -> Int -> g -> m Ray
-  renderPixelM :: (StatefulGen g m, PrimMonad m) => c -> Int -> Int -> HittableList -> g -> m PixelRGB8
-  renderM :: (StatefulGen g m, PrimMonad m) => c -> HittableList -> g -> m (Image PixelRGB8)
+  renderPixelM :: (StatefulGen g m, PrimMonad m, FoldHittable w) => c -> Int -> Int -> w -> g -> m PixelRGB8
+  renderM :: (StatefulGen g m, PrimMonad m, FoldHittable w) => c -> w -> g -> m (Image PixelRGB8)
 
 data Camera = Camera
   { aspectRatio :: Double,
@@ -155,7 +154,7 @@ instance CameraTrait Camera where
     let averageColor = mconcat colors .^ pixelSamplesScale
     return $ vecToPixel averageColor
 
-  renderM :: (StatefulGen g m, PrimMonad m) => Camera -> HittableList -> g -> m (Image PixelRGB8)
+  renderM :: (StatefulGen g m, PrimMonad m, FoldHittable w) => Camera -> w -> g -> m (Image PixelRGB8)
   renderM camera world gen = do
     let Camera {width, height} = camera
         renderPixel x y = renderPixelM camera x y world gen

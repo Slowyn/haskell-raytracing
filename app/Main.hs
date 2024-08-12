@@ -3,11 +3,12 @@
 
 module Main where
 
+import Bvh (buildBvhM)
 import Camera (Camera, CameraTrait (..))
 import Codec.Picture
 import Data.Time.Clock
 import Dielectric (Dielectric (..))
-import HittableList (HittableList (..))
+import HittableList (HittableList (..), mkHittableList)
 import Lambertian (Lambertian (..))
 import Metal (mkMetal)
 import Object (SomeObject, mkSomeObject)
@@ -49,8 +50,9 @@ main = do
           maxDepth
   gen <- newIOGenM (mkStdGen 2024)
   world <- finalScene 6 gen
+  bvhWorld <- buildBvhM (objects world) 2 4 gen
   printf "SamplesPerPixel: %s\nMaxDepth: %s\nImage Width: %s\n" (show samplesPerPixel) (show maxDepth) (show width)
-  image <- renderM camera world gen
+  image <- renderM camera bvhWorld gen
   saveJpgImage 100 "test.jpg" (ImageRGB8 image)
   t2 <- getCurrentTime
   printf "Time taken: %s\n" (show $ diffUTCTime t2 t1)
@@ -86,7 +88,7 @@ finalScene n gen = do
   let pairs = [(a, b) | a <- [leftN .. rightN], b <- [leftN .. rightN]]
   spheres <- mapM actualMapFn pairs
   return $
-    HittableList $
+    mkHittableList $
       [ mkSomeObject (mkSphere (fromXYZ (0, -1000, -1)) 1000) materialGround,
         mkSomeObject sphere1 material1,
         mkSomeObject sphere2 material2,
