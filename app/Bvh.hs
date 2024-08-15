@@ -1,68 +1,74 @@
-module Bvh (Bvh (..), buildBvhM, nearestHit) where
+module Bvh (Bvh (..), buildBvh, nearestHit, toDataTree) where
 
-import Aabb (Aabb (..), combineAabbs, hitBox, mkAabb)
+import Aabb (Aabb (..), combineAabbs, getAabbComponent, hitBox, longestAxis, mkAabb)
+import Axis (Axis (..))
 import Control.Applicative (Alternative (..), (<|>))
-import Data.List (sortBy)
+import Data.List (foldl', sortBy)
+import Data.Tree (Tree (..))
 import FoldHittable (FoldHittable (..))
+import HitRecord (HitRecord (..))
 import Hittable (Hittable (..))
-import Interval (Interval (..))
+import Interval (Interval (..), mkInterval)
 import Object (Object (material), SomeObject)
-import System.Random.Stateful (StatefulGen, Uniform (..), uniformEnumM)
 
 data Bvh a
   = Leaf Aabb a
   | Branch Int Aabb (Bvh a) (Bvh a)
   | Empty
+  deriving (Show, Eq)
 
-data Axis = X | Y | Z deriving (Enum, Bounded)
-
-instance Uniform Axis where
-  uniformM = uniformEnumM
-
-getAabbComponent :: Aabb -> Axis -> Interval
-getAabbComponent bbox axis = case axis of
-  X -> x bbox
-  Y -> y bbox
-  Z -> y bbox
+toDataTree :: (Show a) => Bvh a -> Tree String
+toDataTree Empty = Node "Empty" []
+toDataTree (Leaf bbox a) = Node (show bbox) []
+toDataTree (Branch _ bbox l r) = Node ("Node" ++ " " ++ show bbox) [toDataTree l, toDataTree r]
 
 instance FoldHittable (Bvh SomeObject) where
   nearestHit bvh rayIn rayT = do
-    let bbox = mkAabb
-    _bboxHit <- hitBox bbox rayIn rayT
+    rayT' <- hitBox (combinedBoundingBox bvh) rayIn rayT
     case bvh of
       Empty -> Nothing
-      Leaf _ object -> (,material object) <$> hit object rayIn rayT
-      Branch _ _ l r -> hitLeft <|> hitRight
-        where
-          hitLeft = nearestHit l rayIn rayT
-          hitRight = nearestHit r rayIn rayT
+      Leaf _ object -> (,material object) <$> hit object rayIn rayT'
+      Branch _ _ l r -> do
+        let leftHitMaybe = nearestHit l rayIn rayT'
+            (Interval rMin rMax) = rayT'
+            rightRayT = mkInterval rMin (maybe rMax (t . fst) leftHitMaybe)
+            rightHitMaybe = nearestHit r rayIn rightRayT
+        rightHitMaybe <|> leftHitMaybe
+
   combinedBoundingBox (Leaf bbox _) = bbox
   combinedBoundingBox (Branch _ bbox _ _) = bbox
   combinedBoundingBox Empty = mkAabb
 
-buildBvhM :: (StatefulGen g m) => [SomeObject] -> Int -> Int -> g -> m (Bvh SomeObject)
-buildBvhM world start end gen = do
-  axis :: Axis <- uniformM gen
-  let cmp = boxCompare axis
-      objectSpan = end - start
+buildBvh :: [SomeObject] -> Int -> IO (Bvh SomeObject)
+buildBvh world depth = do
+  let bbox = foldl' combineAabbs mkAabb (map boundingBox world)
+      axis = longestAxis bbox
+      cmp = boxCompare axis
+      objectSpan = length world
+  putStrLn $ "Split by Axis: " ++ show axis ++ "\tDepth: " ++ show depth ++ "\tObjects span: " ++ show objectSpan
   case objectSpan of
+    0 -> do
+      print "Zero length, put Empty"
+      pure Empty
     1 -> do
-      let object = world !! start
-      pure $ Leaf (boundingBox object) object
+      print "Length of one, put Leaf"
+      let object = head world
+      pure $ Leaf bbox object
     2 -> do
-      let leftObject = world !! start
-          rightObject = world !! end
+      print "Length of two, put Branch with leafs"
+      let leftObject = world !! 0
+          rightObject = world !! 1
           leftBbox = boundingBox leftObject
           rightBbox = boundingBox rightObject
-      pure $ Branch 1 (combineAabbs leftBbox rightBbox) (Leaf leftBbox leftObject) (Leaf rightBbox rightObject)
+      pure $ Branch depth bbox (Leaf leftBbox leftObject) (Leaf rightBbox rightObject)
     _ -> do
-      let sortedHittables = sortBy cmp world
-          mid = floor $ fromIntegral (start + objectSpan) / 2
-      left <- buildBvhM sortedHittables start mid gen
-      right <- buildBvhM sortedHittables mid end gen
-      let leftBbox = combinedBoundingBox left
-      let rightBbox = combinedBoundingBox right
-      pure $ Branch 2 (combineAabbs leftBbox rightBbox) left right
+      print "Split list in halfs and run recrusion"
+      let sortedWorld = sortBy cmp world
+          (leftWorld, rightWorld) = splitlist sortedWorld
+      print $ "left world length: " ++ (show . length) leftWorld ++ ", right world length: " ++ (show . length) rightWorld
+      left <- buildBvh leftWorld (depth + 1)
+      right <- buildBvh rightWorld (depth + 1)
+      pure $ Branch depth bbox left right
 
 boxCompare :: (Hittable a) => Axis -> a -> a -> Ordering
 boxCompare axis aObject bObject = compare aMin bMin
@@ -71,3 +77,6 @@ boxCompare axis aObject bObject = compare aMin bMin
     bAxisInterval = getAabbComponent (boundingBox bObject) axis
     (Interval aMin _) = aAxisInterval
     (Interval bMin _) = bAxisInterval
+
+splitlist :: [a] -> ([a], [a])
+splitlist xs = splitAt ((length xs + 1) `div` 2) xs

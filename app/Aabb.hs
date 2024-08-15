@@ -5,10 +5,14 @@ module Aabb
     mkAabbPoints,
     combineAabbs,
     hitBox,
+    longestAxis,
+    getAabbComponent,
   )
 where
 
+import Axis (Axis (..))
 import Control.Applicative
+import Data.Foldable (maximumBy)
 import Interval (Interval (..), defaultInterval, mkInterval, mkInterval')
 import Ray (Ray, RayTrait (..))
 import Vec3 qualified as V
@@ -39,31 +43,37 @@ mkAabbPoints a b = mkAabbIntervals xInterval yInterval zInterval
 combineAabbs :: Aabb -> Aabb -> Aabb
 combineAabbs b1 b2 =
   Aabb
-    { x = mergedXInterval,
-      y = mergedYInterval,
-      z = mergedZInterval
+    { x = combinedXInterval,
+      y = combinedYInterval,
+      z = combinedZInterval
     }
   where
-    mergedXInterval = mkInterval' (x b1) (x b2)
-    mergedYInterval = mkInterval' (y b1) (y b2)
-    mergedZInterval = mkInterval' (z b1) (z b2)
-
-mergeIntervals :: Interval -> Interval -> Interval
-mergeIntervals a b = Interval r0 r1
-  where
-    Interval r0 _ = a
-    Interval _ r1 = b
+    combinedXInterval = mkInterval' (x b1) (x b2)
+    combinedYInterval = mkInterval' (y b1) (y b2)
+    combinedZInterval = mkInterval' (z b1) (z b2)
 
 hitBox :: Aabb -> Ray -> Interval -> Maybe Interval
-hitBox bbox rayIn (Interval rayTa rayTb) = do
+hitBox bbox rayIn (Interval rayTmin rayTmax) = do
   let (origin, direction) = toVecs rayIn
       go :: Interval -> (V.V3 -> Double) -> Maybe Interval
-      go (Interval a b) comp = do
-        let adinv = comp direction
-            t0 = (a - comp origin) * adinv
-            t1 = (b - comp origin) * adinv
+      go (Interval aMin aMax) comp = do
+        let adinv = 1.0 / comp direction
+            t0 = (aMin - comp origin) * adinv
+            t1 = (aMax - comp origin) * adinv
             outputT@(Interval ta tb)
-              | t0 < t1 = Interval (min rayTa t0) (max rayTb t1)
-              | otherwise = Interval (min rayTa t1) (max rayTb t0)
+              | t0 < t1 = Interval (max rayTmin t0) (min rayTmax t1)
+              | otherwise = Interval (max rayTmin t1) (min rayTmax t0)
         if tb <= ta then Nothing else Just outputT
   go (x bbox) V.x <|> go (y bbox) V.y <|> go (z bbox) V.z
+
+getAabbComponent :: Aabb -> Axis -> Interval
+getAabbComponent bbox axis = case axis of
+  X -> x bbox
+  Y -> y bbox
+  Z -> z bbox
+
+longestAxis :: Aabb -> Axis
+longestAxis bbox = axis
+  where
+    cmp a b = compare (snd a) (snd b)
+    axis = fst . maximumBy cmp $ zip [X, Y, Z] $ [x, y, z] <*> pure bbox

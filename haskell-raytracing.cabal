@@ -81,7 +81,8 @@ executable haskell-raytracing
         FoldHittable,
         Aabb,
         Interval,
-        Bvh
+        Bvh,
+        Axis
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -95,7 +96,8 @@ executable haskell-raytracing
         time ^>=1.12.2,
         primitive ^>=0.9.0.0,
         vector ^>=0.13.1.0,
-        vector-algorithms ^>=0.9.0.2
+        vector-algorithms ^>=0.9.0.2,
+        containers ^>=0.6.8
 
     -- Directories containing source files.
     hs-source-dirs:   app

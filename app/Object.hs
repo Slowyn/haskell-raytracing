@@ -19,5 +19,5 @@ instance (Material material) => Material (Object shape material) where
 
 type SomeObject = Object SomeHittable SomeMaterial
 
-mkSomeObject :: (Hittable obj, Material a) => obj -> a -> Object SomeHittable SomeMaterial
+mkSomeObject :: (Hittable obj, Material a, Show obj, Show a) => obj -> a -> Object SomeHittable SomeMaterial
 mkSomeObject shape mat = Object (MkSomeHittable shape) (MkSomeMaterial mat)

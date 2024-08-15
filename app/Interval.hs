@@ -16,6 +16,9 @@ import Data.Ord (clamp)
 
 data Interval = Interval Double Double deriving (Show, Eq)
 
+instance Ord Interval where
+  (<=) a b = intervalSize a <= intervalSize b
+
 defaultInterval :: Interval
 defaultInterval = Interval 0 0
 
@@ -28,10 +31,10 @@ mkInterval = Interval
 mkInterval' :: Interval -> Interval -> Interval
 mkInterval' interval1 interval2 = Interval min1 max2
   where
-    Interval a1 a2 = interval1
-    Interval b1 b2 = interval2
-    min1 = min a1 b1
-    max2 = max a2 b2
+    Interval aMin aMax = interval1
+    Interval bMin bMax = interval2
+    min1 = min aMin bMin
+    max2 = max aMax bMax
 
 intervalSize :: Interval -> Double
 intervalSize (Interval a b) = b - a

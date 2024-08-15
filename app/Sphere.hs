@@ -4,7 +4,7 @@
 
 module Sphere (Sphere (..), mkSphere, mkMovingSphere) where
 
-import Aabb (Aabb, combineAabbs, mkAabb, mkAabbPoints)
+import Aabb (Aabb, combineAabbs, mkAabbPoints)
 import Control.Applicative
 import Control.Monad
 import HitRecord (createHitRecord, solveFrontFaceNorm)

@@ -3,10 +3,11 @@
 
 module Main where
 
-import Bvh (buildBvhM)
+import Bvh (buildBvh, toDataTree)
 import Camera (Camera, CameraTrait (..))
 import Codec.Picture
 import Data.Time.Clock
+import Data.Tree (drawTree)
 import Dielectric (Dielectric (..))
 import HittableList (HittableList (..), mkHittableList)
 import Lambertian (Lambertian (..))
@@ -26,7 +27,7 @@ main :: IO ()
 main = do
   t1 <- getCurrentTime
   printf "Program started at %s\n" (show t1)
-  let lookFrom = fromXYZ (-13, 2, 3)
+  let lookFrom = fromXYZ (13, 2, 3)
       lookAt = fromXYZ (0, 0, 0)
       vUp = fromXYZ (0, 1, 0)
       aspectRatio = 16.0 / 9.0
@@ -49,8 +50,9 @@ main = do
           samplesPerPixel
           maxDepth
   gen <- newIOGenM (mkStdGen 2024)
-  world <- finalScene 6 gen
-  bvhWorld <- buildBvhM (objects world) 2 4 gen
+  HittableList world <- finalScene 22 gen
+  bvhWorld <- buildBvh world 0
+  putStr $ drawTree (toDataTree bvhWorld)
   printf "SamplesPerPixel: %s\nMaxDepth: %s\nImage Width: %s\n" (show samplesPerPixel) (show maxDepth) (show width)
   image <- renderM camera bvhWorld gen
   saveJpgImage 100 "test.jpg" (ImageRGB8 image)
@@ -76,6 +78,7 @@ mapPairs gen (a, b) = do
 finalScene :: (StatefulGen g m) => Int -> g -> m HittableList
 finalScene n gen = do
   let materialGround = Lambertian $ fromXYZ (0.5, 0.5, 0.5)
+      sphereGround = mkSphere (fromXYZ (0, -1000, -1)) 1000
       material1 = Dielectric 1.5
       sphere1 = mkSphere (fromXYZ (0, 1, 0)) 1.0
       material2 = Lambertian $ fromXYZ (0.4, 0.2, 0.1)
@@ -89,9 +92,9 @@ finalScene n gen = do
   spheres <- mapM actualMapFn pairs
   return $
     mkHittableList $
-      [ mkSomeObject (mkSphere (fromXYZ (0, -1000, -1)) 1000) materialGround,
+      [ mkSomeObject sphereGround materialGround,
+        mkSomeObject sphere3 material3,
         mkSomeObject sphere1 material1,
-        mkSomeObject sphere2 material2,
-        mkSomeObject sphere3 material3
+        mkSomeObject sphere2 material2
       ]
         ++ spheres

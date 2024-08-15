@@ -19,7 +19,10 @@ class Material object where
     m (Maybe (V3, Ray))
 
 data SomeMaterial where
-  MkSomeMaterial :: (Material material) => material -> SomeMaterial
+  MkSomeMaterial :: (Material material, Show material) => material -> SomeMaterial
 
 instance Material SomeMaterial where
   scatterM (MkSomeMaterial material) = scatterM material
+
+instance Show SomeMaterial where
+  show (MkSomeMaterial mat) = show mat
