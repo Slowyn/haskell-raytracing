@@ -49,7 +49,7 @@ main = do
           samplesPerPixel
           maxDepth
   gen <- newIOGenM (mkStdGen 2024)
-  HittableList world <- finalScene 22 gen
+  HittableList world <- finalScene 6 gen
   let bvhWorld = buildBvh world 0
   printf "SamplesPerPixel: %s\nMaxDepth: %s\nImage Width: %s\n" (show samplesPerPixel) (show maxDepth) (show width)
   image <- renderM camera bvhWorld gen

@@ -17,17 +17,17 @@ data Bvh a
   deriving (Show, Eq)
 
 instance FoldHittable (Bvh SomeObject) where
-  nearestHit bvh rayIn rayT = do
+  nearestHit bvh rayIn rayT@(Interval tMin _tMax) = do
     rayT' <- hitBox (combinedBoundingBox bvh) rayIn rayT
     case bvh of
       Empty -> Nothing
       Leaf _ object -> (,material object) <$> hit object rayIn rayT'
-      Branch _ _ l r -> do
-        let leftHitMaybe = nearestHit l rayIn rayT'
-            (Interval rMin rMax) = rayT'
-            rightRayT = mkInterval rMin (maybe rMax (t . fst) leftHitMaybe)
-            rightHitMaybe = nearestHit r rayIn rightRayT
-        rightHitMaybe <|> leftHitMaybe
+      Branch _ _ l r ->
+        ( do
+            lHit@(HitRecord {t}, _) <- nearestHit l rayIn rayT'
+            nearestHit r rayIn (mkInterval tMin t) <|> pure lHit
+        )
+          <|> nearestHit r rayIn rayT'
 
   combinedBoundingBox (Leaf bbox _) = bbox
   combinedBoundingBox (Branch _ bbox _ _) = bbox
@@ -42,7 +42,7 @@ buildBvh world depth = do
   case objectSpan of
     0 -> Empty
     1 -> do
-      let object = head world
+      let object = world !! 0
       Leaf bbox object
     2 -> do
       let leftObject = world !! 0
