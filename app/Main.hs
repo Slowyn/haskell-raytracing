@@ -33,8 +33,8 @@ main = do
       vfov = 20
       defocusAngle = 0.6
       focusDist = 10
-      samplesPerPixel = 40
-      maxDepth = 20
+      samplesPerPixel = 100
+      maxDepth = 50
       camera :: Camera
       camera =
         createCamera
