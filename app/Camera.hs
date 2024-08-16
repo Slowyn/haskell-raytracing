@@ -6,8 +6,10 @@
 module Camera (Camera (..), CameraTrait (..)) where
 
 import Codec.Picture
+import Control.Concurrent.Async (mapConcurrently)
 import Control.Monad (replicateM)
 import Control.Monad.Primitive (PrimMonad)
+import Data.Vector (fromList, (!))
 import FoldHittable (FoldHittable (nearestHit))
 import Interval (Interval (..))
 import Material (Material (scatterM), SomeMaterial (MkSomeMaterial))
@@ -67,7 +69,7 @@ class CameraTrait c where
   createCamera :: Int -> Double -> Int -> V3 -> V3 -> V3 -> Double -> Double -> Int -> Int -> c
   getRayM :: (StatefulGen g m) => c -> Int -> Int -> g -> m Ray
   renderPixelM :: (StatefulGen g m, PrimMonad m, FoldHittable w) => c -> Int -> Int -> w -> g -> m PixelRGB8
-  renderM :: (StatefulGen g m, PrimMonad m, FoldHittable w) => c -> w -> g -> m (Image PixelRGB8)
+  renderM :: (StatefulGen g IO, FoldHittable w) => c -> w -> g -> IO (Image PixelRGB8)
 
 data Camera = Camera
   { aspectRatio :: Double,
@@ -154,11 +156,14 @@ instance CameraTrait Camera where
     let averageColor = mconcat colors .^ pixelSamplesScale
     return $ vecToPixel averageColor
 
-  renderM :: (StatefulGen g m, PrimMonad m, FoldHittable w) => Camera -> w -> g -> m (Image PixelRGB8)
+  renderM :: (StatefulGen g IO, FoldHittable w) => Camera -> w -> g -> IO (Image PixelRGB8)
   renderM camera world gen = do
     let Camera {width, height} = camera
-        renderPixel x y = renderPixelM camera x y world gen
-    withImage width height renderPixel
+        renderPixel (x, y) = renderPixelM camera x y world gen
+        pixels = fromList [(x, y) | y <- [0 .. height - 1], x <- [0 .. width - 1]]
+    realPixels <- mapConcurrently renderPixel pixels
+    let getPixel x y = realPixels ! (x + width * y)
+    pure $ generateImage getPixel width height
 
 degreeToRad :: Double -> Double
 degreeToRad degrees = degrees * pi / 180
