@@ -1,22 +1,29 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module HittableList (HittableList (..), SomeHittable (..)) where
+module HittableList (HittableList (..), SomeHittable (..), mkHittableList) where
 
+import Aabb (mkAabb)
 import Control.Applicative
-import Data.List (intercalate)
+import Data.List (foldl')
+import FoldHittable (FoldHittable (..))
 import HitRecord (HitRecord (..))
 import Hittable (Hittable (..), SomeHittable (..))
+import Interval (Interval (..))
 import Material (SomeMaterial)
+import Object (Object (..), SomeObject)
 import Ray (Ray)
 
-newtype HittableList = HittableList [SomeHittable]
+newtype HittableList = HittableList [SomeObject] deriving (Show)
 
-instance Hittable HittableList where
-  hit (HittableList objects) ray tMin tMax = foldl (closestHit ray tMin) Nothing objects
+instance FoldHittable HittableList where
+  nearestHit (HittableList hittables) ray rayT = foldl' (closestHit ray rayT) Nothing hittables
     where
-      closestHit :: Ray -> Double -> Maybe (HitRecord, SomeMaterial) -> SomeHittable -> Maybe (HitRecord, SomeMaterial)
-      closestHit ray tMin closestSoFar (SomeHittable object) = hit object ray tMin (maybe tMax (t . fst) closestSoFar) <|> closestSoFar
+      closestHit :: Ray -> Interval -> Maybe (HitRecord, SomeMaterial) -> SomeObject -> Maybe (HitRecord, SomeMaterial)
+      closestHit ray (Interval tMin tMax) closestSoFar (Object object material) =
+        ((,material) <$> hit object ray (Interval tMin (maybe tMax (t . fst) closestSoFar)))
+          <|> closestSoFar
+  combinedBoundingBox = const mkAabb
 
-instance Show HittableList where
-  show (HittableList objects) = "[\n" ++ intercalate "\n" (map show objects) ++ "\n]"
+mkHittableList :: [SomeObject] -> HittableList
+mkHittableList = HittableList

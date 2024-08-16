@@ -1,26 +1,26 @@
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Sphere (Sphere (..), mkSphere) where
+module Sphere (Sphere (..), mkSphere, mkMovingSphere) where
 
+import Aabb (Aabb, combineAabbs, mkAabbPoints)
 import Control.Applicative
 import Control.Monad
 import HitRecord (createHitRecord, solveFrontFaceNorm)
 import Hittable (Hittable (..))
-import Material (Material, SomeMaterial (..))
-import Ray (RayTrait (..))
+import Interval (Interval (..))
+import Ray (Ray (..), RayTrait (..))
 import Vec3 (V3, Vec3 (..))
 
-data Sphere m = (Material m) => Sphere !m !V3 !Double
+data Sphere
+  = Sphere {center :: !V3, radius :: !Double, bbox :: !Aabb}
+  | MovingSphere {center1 :: !V3, center2 :: !V3, centerVec :: !V3, radius :: !Double, bbox :: !Aabb}
+  deriving (Show, Eq)
 
-deriving instance (Show m) => Show (Sphere m)
-
-deriving instance (Eq m) => Eq (Sphere m)
-
-instance (Material m) => Hittable (Sphere m) where
-  hit sphere ray tMin tMax = do
-    let (Sphere material center radius) = sphere
+instance Hittable Sphere where
+  hit sphere ray (Interval tMin tMax) = do
+    let (center, radius) = (centerPosition sphere (time ray), getRadius sphere)
         (origin, direction) = toVecs ray
         oc = center <-> origin
         a = squareNorm direction
@@ -36,7 +36,9 @@ instance (Material m) => Hittable (Sphere m) where
         p = at ray t
         outwardNorm = (p <-> center) /^ radius
         (frontFace, normal) = solveFrontFaceNorm ray outwardNorm
-    pure (createHitRecord p normal t frontFace, SomeMaterial material)
+    pure $ createHitRecord p normal t frontFace
+
+  boundingBox = bbox
 
 findClosestRoot :: Double -> Double -> Double -> Double -> Maybe Double
 findClosestRoot tMin tMax root1 root2 = ensure valueInTRange root1 <|> ensure valueInTRange root2
@@ -50,5 +52,31 @@ valueInRange tMin tMax t = tMin < t && t < tMax
 ensure :: (Alternative f) => (a -> Bool) -> a -> f a
 ensure p a = a <$ guard (p a)
 
-mkSphere :: (Material m) => m -> V3 -> Double -> Sphere m
-mkSphere mat position radius = Sphere mat position (max 0 radius)
+mkSphere :: V3 -> Double -> Sphere
+mkSphere center r = Sphere {center, radius, bbox = mkAabbPoints (center <-> rVec) (center <+> rVec)}
+  where
+    radius = max 0 r
+    rVec = fromValue radius
+
+mkMovingSphere :: V3 -> V3 -> Double -> Sphere
+mkMovingSphere center1 center2 r =
+  MovingSphere
+    { center1,
+      center2,
+      centerVec = center2 <-> center1,
+      radius,
+      bbox = bbox
+    }
+  where
+    radius = max 0 r
+    rVec = fromValue radius
+    box1 = mkAabbPoints (center1 <-> rVec) (center1 <+> rVec)
+    box2 = mkAabbPoints (center2 <-> rVec) (center2 <+> rVec)
+    bbox = combineAabbs box1 box2
+
+centerPosition :: Sphere -> Double -> V3
+centerPosition (Sphere {..}) _t = center
+centerPosition (MovingSphere {..}) t = center1 <+> centerVec .^ t
+
+getRadius :: Sphere -> Double
+getRadius = radius

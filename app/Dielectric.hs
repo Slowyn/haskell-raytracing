@@ -3,7 +3,7 @@ module Dielectric (Dielectric (..)) where
 import HitRecord (HitRecord (..))
 import Material (Material (..))
 import Optics (reflect, refract, shlick)
-import Ray (RayTrait (..))
+import Ray (Ray (..), RayTrait (..), mkRay)
 import System.Random.Stateful (UniformRange (uniformRM))
 import Vec3 (Vec3 (..))
 
@@ -23,5 +23,5 @@ instance Material Dielectric where
           if cannotRefract || reflectanseP > randomValue
             then reflect unitDirection (normal hitRecord)
             else refract unitDirection (normal hitRecord) ri
-        scattered = fromVecs (p hitRecord) direction
+        scattered = mkRay (p hitRecord) direction (time rayIn)
     return $ Just (attenuation, scattered)

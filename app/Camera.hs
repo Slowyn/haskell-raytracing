@@ -6,14 +6,16 @@
 module Camera (Camera (..), CameraTrait (..)) where
 
 import Codec.Picture
+import Control.Concurrent.Async (mapConcurrently)
 import Control.Monad (replicateM)
 import Control.Monad.Primitive (PrimMonad)
-import Hittable (Hittable (..))
-import HittableList (HittableList)
-import Material (Material (scatterM), SomeMaterial (SomeMaterial))
+import Data.Vector (fromList, (!))
+import FoldHittable (FoldHittable (nearestHit))
+import Interval (Interval (..))
+import Material (Material (scatterM), SomeMaterial (MkSomeMaterial))
 import Random (uniformVec3M, uniformVec3OnUnitDiskM)
-import Ray (Ray (..), RayTrait (..))
-import System.Random.Stateful (StatefulGen)
+import Ray (Ray (..), RayTrait (..), mkRay)
+import System.Random.Stateful (StatefulGen, UniformRange (uniformRM))
 import Vec3 (V3, Vec3 (..))
 
 clamp :: (Ord a) => a -> a -> a -> a
@@ -44,9 +46,9 @@ rayColorBackground ray = color
     a = 0.5 * (y unitDirection + 1.0)
     color = fromXYZ (1.0, 1.0, 1.0) .^ (1 - a) <+> fromXYZ (0.5, 0.7, 1.0) .^ a
 
-rayColorM :: (StatefulGen g m) => Ray -> HittableList -> Int -> g -> m V3
-rayColorM ray world depth gen = case hit world ray 0.001 infinity of
-  Just (hitRecord, SomeMaterial material) -> do
+rayColorM :: (StatefulGen g m, FoldHittable w) => Ray -> w -> Int -> g -> m V3
+rayColorM ray world depth gen = case nearestHit world ray (Interval 0.001 infinity) of
+  Just (hitRecord, MkSomeMaterial material) -> do
     if depth <= 0
       then pure $ fromXYZ (0, 0, 0)
       else do
@@ -66,8 +68,8 @@ calculateImageHeight width aspectRatio = max 1 imageHeight
 class CameraTrait c where
   createCamera :: Int -> Double -> Int -> V3 -> V3 -> V3 -> Double -> Double -> Int -> Int -> c
   getRayM :: (StatefulGen g m) => c -> Int -> Int -> g -> m Ray
-  renderPixelM :: (StatefulGen g m, PrimMonad m) => c -> Int -> Int -> HittableList -> g -> m PixelRGB8
-  renderM :: (StatefulGen g m, PrimMonad m) => c -> HittableList -> g -> m (Image PixelRGB8)
+  renderPixelM :: (StatefulGen g m, PrimMonad m, FoldHittable w) => c -> Int -> Int -> w -> g -> m PixelRGB8
+  renderM :: (StatefulGen g IO, FoldHittable w) => c -> w -> g -> IO (Image PixelRGB8)
 
 data Camera = Camera
   { aspectRatio :: Double,
@@ -137,6 +139,7 @@ instance CameraTrait Camera where
   getRayM camera x y gen = do
     offset <- uniformVec3M (-1, 1) gen
     p <- uniformVec3OnUnitDiskM gen
+    randomTime :: Double <- uniformRM (0, 1) gen
     let Camera {center, pixel00Loc, pixelDeltaU, pixelDeltaV, defocusDiskU, defocusDiskV, defocusAngle} = camera
         (x', y', _z') = toXYZ offset
         (x'', y'', _) = toXYZ p
@@ -144,7 +147,7 @@ instance CameraTrait Camera where
         pixelSample = pixel00Loc <+> pixelDeltaU .^ (fromIntegral x + x') <+> pixelDeltaV .^ (fromIntegral y + y')
         origin = if defocusAngle <= 0 then center else defocusDiskSample
         direction = pixelSample <-> origin
-    pure $ fromVecs origin direction
+    pure $ mkRay origin direction randomTime
 
   renderPixelM camera x y world gen = do
     let Camera {samplesPerPixel, pixelSamplesScale, maxDepth} = camera
@@ -153,11 +156,14 @@ instance CameraTrait Camera where
     let averageColor = mconcat colors .^ pixelSamplesScale
     return $ vecToPixel averageColor
 
-  renderM :: (StatefulGen g m, PrimMonad m) => Camera -> HittableList -> g -> m (Image PixelRGB8)
+  renderM :: (StatefulGen g IO, FoldHittable w) => Camera -> w -> g -> IO (Image PixelRGB8)
   renderM camera world gen = do
     let Camera {width, height} = camera
-        renderPixel x y = renderPixelM camera x y world gen
-    withImage width height renderPixel
+        renderPixel (x, y) = renderPixelM camera x y world gen
+        pixels = fromList [(x, y) | y <- [0 .. height - 1], x <- [0 .. width - 1]]
+    realPixels <- mapConcurrently renderPixel pixels
+    let getPixel x y = realPixels ! (x + width * y)
+    pure $ generateImage getPixel width height
 
 degreeToRad :: Double -> Double
 degreeToRad degrees = degrees * pi / 180

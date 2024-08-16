@@ -12,8 +12,12 @@ data Object shape material = Object
 
 instance (Hittable shape) => Hittable (Object shape material) where
   hit = hit . shape
+  boundingBox = boundingBox . shape
+
+instance (Material material) => Material (Object shape material) where
+  scatterM = scatterM . material
 
 type SomeObject = Object SomeHittable SomeMaterial
 
-mkSomeObject :: (Hittable obj, Material a) => obj -> a -> Object SomeHittable SomeMaterial
-mkSomeObject shape mat = Object (SomeHittable shape) (SomeMaterial mat)
+mkSomeObject :: (Hittable obj, Material a, Show obj, Show a) => obj -> a -> Object SomeHittable SomeMaterial
+mkSomeObject shape mat = Object (MkSomeHittable shape) (MkSomeMaterial mat)

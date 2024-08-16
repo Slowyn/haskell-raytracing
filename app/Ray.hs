@@ -1,7 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Ray (Ray (..), RayTrait (..), fromCVecs) where
+module Ray (Ray (..), RayTrait (..), mkRay) where
 
 import Vec3 (V3, Vec3 (..))
 
@@ -23,17 +24,18 @@ class RayTrait r where
 
 data Ray = Ray
   { rayOrigin :: !V3,
-    rayDirection :: !V3
+    rayDirection :: !V3,
+    time :: !Double
   }
   deriving (Show, Eq)
 
 instance RayTrait Ray where
   fromVecs :: V3 -> V3 -> Ray
-  fromVecs rayOrigin rayDirection = Ray {rayOrigin, rayDirection}
+  fromVecs rayOrigin rayDirection = Ray {rayOrigin, rayDirection, time = 0}
   getOrigin :: Ray -> V3
   getOrigin = rayOrigin
   getDirection :: Ray -> V3
   getDirection = rayDirection
 
-fromCVecs :: V3 -> V3 -> Ray
-fromCVecs = fromVecs
+mkRay :: V3 -> V3 -> Double -> Ray
+mkRay origin direction time = Ray {rayOrigin = origin, rayDirection = direction, time}

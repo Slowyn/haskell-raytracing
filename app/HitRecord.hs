@@ -4,10 +4,10 @@ import Ray
 import Vec3
 
 data HitRecord = HitRecord
-  { p :: V3,
-    normal :: V3,
-    t :: Double,
-    frontFace :: Bool
+  { p :: !V3,
+    normal :: !V3,
+    t :: !Double,
+    frontFace :: !Bool
   }
   deriving (Show, Eq)
 
