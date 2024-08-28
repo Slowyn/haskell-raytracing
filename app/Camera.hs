@@ -6,10 +6,9 @@
 module Camera (Camera (..), CameraTrait (..)) where
 
 import Codec.Picture
-import Control.Concurrent.Async (mapConcurrently)
 import Control.Monad (replicateM)
 import Control.Monad.Primitive (PrimMonad)
-import Data.Vector (fromList, (!))
+import Data.Massiv.Array qualified as A
 import FoldHittable (FoldHittable (nearestHit))
 import Interval (Interval (..))
 import Material (Material (scatterM), SomeMaterial (MkSomeMaterial))
@@ -159,10 +158,10 @@ instance CameraTrait Camera where
   renderM :: (StatefulGen g IO, FoldHittable w) => Camera -> w -> g -> IO (Image PixelRGB8)
   renderM camera world gen = do
     let Camera {width, height} = camera
-        renderPixel (x, y) = renderPixelM camera x y world gen
-        pixels = fromList [(x, y) | y <- [0 .. height - 1], x <- [0 .. width - 1]]
-    realPixels <- mapConcurrently renderPixel pixels
-    let getPixel x y = realPixels ! (x + width * y)
+        renderPixel (x A.:. y) = renderPixelM camera x y world gen
+        pixels = A.makeArray A.Par (A.Sz (width A.:. height)) id :: A.Array A.U A.Ix2 A.Ix2
+    realPixels :: A.Array A.B A.Ix2 PixelRGB8 <- A.mapIO renderPixel pixels
+    let getPixel x y = A.index' realPixels (x A.:. y)
     pure $ generateImage getPixel width height
 
 degreeToRad :: Double -> Double
