@@ -14,6 +14,7 @@ import Interval (Interval (..))
 import Material (Material (scatterM), SomeMaterial (MkSomeMaterial))
 import Random (uniformVec3M, uniformVec3OnUnitDiskM)
 import Ray (Ray (..), RayTrait (..), mkRay)
+import System.ProgressBar
 import System.Random.Stateful (StatefulGen, UniformRange (uniformRM))
 import Vec3 (V3, Vec3 (..))
 
@@ -158,8 +159,12 @@ instance CameraTrait Camera where
   renderM :: (StatefulGen g IO, FoldHittable w) => Camera -> w -> g -> IO (Image PixelRGB8)
   renderM camera world gen = do
     let Camera {width, height} = camera
-        renderPixel (x A.:. y) = renderPixelM camera x y world gen
-        pixels = A.makeArray A.Par (A.Sz (width A.:. height)) id :: A.Array A.U A.Ix2 A.Ix2
+    pb <- newProgressBar defStyle 10 (Progress 0 (width * height) ())
+    let renderPixel (x A.:. y) = do
+          result <- renderPixelM camera x y world gen
+          incProgress pb 1
+          pure result
+    let pixels = A.makeArray A.Par (A.Sz (width A.:. height)) id :: A.Array A.U A.Ix2 A.Ix2
     realPixels :: A.Array A.B A.Ix2 PixelRGB8 <- A.mapIO renderPixel pixels
     let getPixel x y = A.index' realPixels (x A.:. y)
     pure $ generateImage getPixel width height

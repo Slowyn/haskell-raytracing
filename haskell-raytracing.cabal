@@ -102,7 +102,8 @@ executable haskell-raytracing
         vector ^>=0.13.1.0,
         vector-algorithms ^>=0.9.0.2,
         containers ^>=0.6.8,
-        massiv ^>=1.0.4.0
+        massiv ^>=1.0.4.0,
+        terminal-progress-bar >=0.4.2
 
     -- Directories containing source files.
     hs-source-dirs:   app
