@@ -17,6 +17,7 @@ data Bvh a
   deriving (Show, Eq)
 
 instance FoldHittable (Bvh SomeObject) where
+  {-# INLINE nearestHit #-}
   nearestHit bvh rayIn rayT@(Interval tMin _tMax) = do
     rayT' <- hitBox (combinedBoundingBox bvh) rayIn rayT
     case bvh of
