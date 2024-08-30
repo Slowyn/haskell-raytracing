@@ -14,7 +14,8 @@ where
 
 import Data.Ord (clamp)
 
-data Interval = Interval Double Double deriving (Show, Eq)
+data Interval = Interval !Double !Double
+  deriving (Show, Eq)
 
 instance Ord Interval where
   (<=) a b = intervalSize a <= intervalSize b
