@@ -11,8 +11,8 @@ import Interval (Interval (..), mkInterval)
 import Object (Object (material), SomeObject)
 
 data Bvh a
-  = Leaf Aabb a
-  | Branch Int Aabb (Bvh a) (Bvh a)
+  = Leaf !Aabb !a
+  | Branch !Int !Aabb !(Bvh a) !(Bvh a)
   | Empty
   deriving (Show, Eq)
 
