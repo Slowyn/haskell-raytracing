@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
@@ -6,9 +7,9 @@
 module Camera (Camera (..), CameraTrait (..)) where
 
 import Codec.Picture
-import Control.Monad (replicateM)
 import Control.Monad.Primitive (PrimMonad)
 import Data.Massiv.Array qualified as A
+import Data.Vector qualified as V
 import FoldHittable (FoldHittable (nearestHit))
 import Interval (Interval (..))
 import Material (Material (scatterM), SomeMaterial (MkSomeMaterial))
@@ -140,8 +141,8 @@ instance CameraTrait Camera where
     offset <- uniformVec3M (-1, 1) gen
     p <- uniformVec3OnUnitDiskM gen
     randomTime :: Double <- uniformRM (0, 1) gen
-    let Camera {center, pixel00Loc, pixelDeltaU, pixelDeltaV, defocusDiskU, defocusDiskV, defocusAngle} = camera
-        (x', y', _z') = toXYZ offset
+    let Camera {..} = camera
+        (x', y', _) = toXYZ offset
         (x'', y'', _) = toXYZ p
         defocusDiskSample = center <+> (defocusDiskU .^ x'') <+> (defocusDiskV .^ y'')
         pixelSample = pixel00Loc <+> pixelDeltaU .^ (fromIntegral x + x') <+> pixelDeltaV .^ (fromIntegral y + y')
@@ -150,10 +151,10 @@ instance CameraTrait Camera where
     pure $ mkRay origin direction randomTime
 
   renderPixelM camera x y world gen = do
-    let Camera {samplesPerPixel, pixelSamplesScale, maxDepth} = camera
-    rays <- replicateM samplesPerPixel (getRayM camera x y gen)
-    colors <- mapM (\ray -> rayColorM ray world maxDepth gen) rays
-    let averageColor = mconcat colors .^ pixelSamplesScale
+    let Camera {..} = camera
+    rays <- V.generateM samplesPerPixel (\_ -> getRayM camera x y gen)
+    colors <- V.mapM (\ray -> rayColorM ray world maxDepth gen) rays
+    let averageColor = V.foldl' (<>) mempty colors .^ pixelSamplesScale
     return $ vecToPixel averageColor
 
   renderM :: (StatefulGen g IO, FoldHittable w) => Camera -> w -> g -> IO (Image PixelRGB8)
