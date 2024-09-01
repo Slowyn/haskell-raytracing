@@ -17,6 +17,7 @@ import Sphere (mkMovingSphere, mkSphere)
 import System.Random (mkStdGen)
 import System.Random.Stateful (StatefulGen, newIOGenM, uniformRM)
 import Text.Printf
+import Texture (SolidColor (SolidColor), mkCheckerTexture)
 import Vec3 (Vec3 (..))
 
 width :: Int
@@ -63,7 +64,7 @@ mapPairs gen (a, b) = do
   chooseMatP :: Double <- uniformRM (0, 1) gen
   offsetX <- uniformRM (0, 1) gen
   offsetZ <- uniformRM (0, 1) gen
-  albedo <- (\v -> v <.> v) <$> uniformVec3M (0, 1) gen
+  albedo <- SolidColor . (\v -> v <.> v) <$> uniformVec3M (0, 1) gen
   metalColor <- uniformVec3M (0.5, 1) gen
   let center = fromXYZ (fromIntegral a + 0.9 * offsetX, 0.2, fromIntegral b + 0.9 * offsetZ)
   center2 <- (<+> center) . fromXYZ . (0,,0) <$> uniformRM (0, 1) gen
@@ -75,11 +76,16 @@ mapPairs gen (a, b) = do
 
 finalScene :: (StatefulGen g m) => Int -> g -> m HittableList
 finalScene n gen = do
-  let materialGround = Lambertian $ fromXYZ (0.5, 0.5, 0.5)
+  let checker =
+        mkCheckerTexture
+          (SolidColor $ fromXYZ (0.2, 0.3, 0.1))
+          (SolidColor $ fromXYZ (0.9, 0.9, 0.9))
+          0.32
+      materialGround = Lambertian checker
       sphereGround = mkSphere (fromXYZ (0, -1000, -1)) 1000
       material1 = Dielectric 1.5
       sphere1 = mkSphere (fromXYZ (0, 1, 0)) 1.0
-      material2 = Lambertian $ fromXYZ (0.4, 0.2, 0.1)
+      material2 = Lambertian $ SolidColor (fromXYZ (0.4, 0.2, 0.1))
       sphere2 = mkSphere (fromXYZ (-4, 1, 0)) 1.0
       material3 = mkMetal (fromXYZ (0.7, 0.6, 0.5)) 0
       sphere3 = mkSphere (fromXYZ (4, 1, 0)) 1.0

@@ -86,7 +86,8 @@ executable haskell-raytracing
         Aabb,
         Interval,
         Bvh,
-        Axis
+        Axis,
+        Texture
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

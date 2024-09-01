@@ -36,9 +36,18 @@ instance Hittable Sphere where
         p = at ray t
         outwardNorm = (p <-> center) /^ radius
         (frontFace, normal) = solveFrontFaceNorm ray outwardNorm
-    pure $ createHitRecord p normal t frontFace
+        (u, v) = getSphereUV p
+    pure $ createHitRecord p normal t frontFace u v
 
   boundingBox = bbox
+
+getSphereUV :: V3 -> (Double, Double)
+getSphereUV point = (u, v)
+  where
+    theta = acos (-y point)
+    phi = atan2 (-z point) (x point) + pi
+    u = phi / (2 * pi)
+    v = theta / pi
 
 findClosestRoot :: Double -> Double -> Double -> Double -> Maybe Double
 findClosestRoot tMin tMax root1 root2 = ensure valueInTRange root1 <|> ensure valueInTRange root2
