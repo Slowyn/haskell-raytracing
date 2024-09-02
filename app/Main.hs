@@ -8,16 +8,19 @@ import Camera (Camera, CameraTrait (..))
 import Codec.Picture
 import Data.Time.Clock
 import Dielectric (Dielectric (..))
-import HittableList (HittableList (..), mkHittableList)
+import HittableList (mkHittableList)
 import Lambertian (Lambertian (..))
 import Metal (mkMetal)
 import Object (SomeObject, mkSomeObject)
 import Random (uniformVec3M)
+import Scene (Scene (..), SomeWorld (MkSomeWorld), mkScene, renderSceneIO)
 import Sphere (mkMovingSphere, mkSphere)
 import System.Random (mkStdGen)
 import System.Random.Stateful (StatefulGen, newIOGenM, uniformRM)
 import Text.Printf
-import Texture (SolidColor (SolidColor), mkCheckerTexture)
+import Texture.Checker (mkCheckerTexture)
+import Texture.Image (mkImageTexture)
+import Texture.SolidColor (SolidColor (SolidColor))
 import Vec3 (Vec3 (..))
 
 width :: Int
@@ -27,33 +30,16 @@ main :: IO ()
 main = do
   t1 <- getCurrentTime
   printf "Program started at %s\n" (show t1)
-  let lookFrom = fromXYZ (13, 2, 3)
-      lookAt = fromXYZ (0, 0, 0)
-      vUp = fromXYZ (0, 1, 0)
+  let selectedScene = 1
       aspectRatio = 16.0 / 9.0
-      vfov = 20
-      defocusAngle = 0.6
-      focusDist = 10
       samplesPerPixel = 100
       maxDepth = 50
-      camera :: Camera
-      camera =
-        createCamera
-          width
-          aspectRatio
-          vfov
-          lookFrom
-          lookAt
-          vUp
-          defocusAngle
-          focusDist
-          samplesPerPixel
-          maxDepth
   gen <- newIOGenM (mkStdGen 2024)
-  HittableList world <- finalScene 22 gen
-  let bvhWorld = buildBvh world 0
+  scene <- case selectedScene of
+    0 -> finalScene width aspectRatio samplesPerPixel maxDepth 22 gen
+    _ -> earthScene width aspectRatio samplesPerPixel maxDepth
   printf "SamplesPerPixel: %s\nMaxDepth: %s\nImage Width: %s\n" (show samplesPerPixel) (show maxDepth) (show width)
-  image <- renderM camera bvhWorld gen
+  image <- renderSceneIO scene gen
   saveJpgImage 100 "test.jpg" (ImageRGB8 image)
   t2 <- getCurrentTime
   printf "Time taken: %s\n" (show $ diffUTCTime t2 t1)
@@ -74,9 +60,28 @@ mapPairs gen (a, b) = do
         | otherwise = mkSomeObject (mkSphere center 0.2) (Dielectric 1.5)
   return sphere
 
-finalScene :: (StatefulGen g m) => Int -> g -> m HittableList
-finalScene n gen = do
-  let checker =
+finalScene :: (StatefulGen g IO) => Int -> Double -> Int -> Int -> Int -> g -> IO Scene
+finalScene w aspectRatio samplesPerPixel maxDepth n gen = do
+  let lookFrom = fromXYZ (13, 2, 3)
+      lookAt = fromXYZ (0, 0, 0)
+      vUp = fromXYZ (0, 1, 0)
+      vfov = 20
+      defocusAngle = 0.6
+      focusDist = 10
+      camera :: Camera
+      camera =
+        createCamera
+          w
+          aspectRatio
+          vfov
+          lookFrom
+          lookAt
+          vUp
+          defocusAngle
+          focusDist
+          samplesPerPixel
+          maxDepth
+      checker =
         mkCheckerTexture
           (SolidColor $ fromXYZ (0.2, 0.3, 0.1))
           (SolidColor $ fromXYZ (0.9, 0.9, 0.9))
@@ -92,13 +97,34 @@ finalScene n gen = do
       actualMapFn = mapPairs gen
       halfRange = floor (fromIntegral n / 2 :: Double)
       (leftN, rightN) = (-halfRange, halfRange)
-  let pairs = [(a, b) | a <- [leftN .. rightN], b <- [leftN .. rightN]]
+      pairs = [(a, b) | a <- [leftN .. rightN], b <- [leftN .. rightN]]
   spheres <- mapM actualMapFn pairs
-  return $
-    mkHittableList $
-      [ mkSomeObject sphereGround materialGround,
-        mkSomeObject sphere3 material3,
-        mkSomeObject sphere1 material1,
-        mkSomeObject sphere2 material2
-      ]
-        ++ spheres
+  let world = MkSomeWorld $ buildBvh ([mkSomeObject sphereGround materialGround, mkSomeObject sphere3 material3, mkSomeObject sphere1 material1, mkSomeObject sphere2 material2] ++ spheres) 0
+  pure $ mkScene camera world
+
+earthScene :: Int -> Double -> Int -> Int -> IO Scene
+earthScene w aspectRatio samplesPerPixel maxDepth = do
+  let lookFrom = fromXYZ (0, 0, 12)
+      lookAt = fromXYZ (0, 0, 0)
+      vUp = fromXYZ (0, 1, 0)
+      vfov = 20
+      defocusAngle = 0
+      focusDist = 10
+      camera :: Camera
+      camera =
+        createCamera
+          w
+          aspectRatio
+          vfov
+          lookFrom
+          lookAt
+          vUp
+          defocusAngle
+          focusDist
+          samplesPerPixel
+          maxDepth
+  earthTexture <- mkImageTexture "assets/earthmap.jpg"
+  let earthSurface = Lambertian earthTexture
+      globe = mkSomeObject (mkSphere (fromXYZ (0, 0, 0)) 2) earthSurface
+      world = MkSomeWorld $ mkHittableList [globe]
+  pure $ mkScene camera world

@@ -87,7 +87,11 @@ executable haskell-raytracing
         Interval,
         Bvh,
         Axis,
-        Texture
+        Texture,
+        Texture.Checker,
+        Texture.SolidColor,
+        Texture.Image,
+        Scene
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

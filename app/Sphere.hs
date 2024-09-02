@@ -37,7 +37,7 @@ instance Hittable Sphere where
         p = at ray t
         outwardNorm = (p <-> center) /^ radius
         (frontFace, normal) = solveFrontFaceNorm ray outwardNorm
-        (u, v) = getSphereUV p
+        (u, v) = getSphereUV outwardNorm
     pure $ createHitRecord p normal t frontFace u v
 
   boundingBox = bbox
