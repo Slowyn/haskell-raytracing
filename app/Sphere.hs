@@ -19,6 +19,7 @@ data Sphere
   deriving (Show, Eq)
 
 instance Hittable Sphere where
+  {-# INLINE hit #-}
   hit sphere ray (Interval tMin tMax) = do
     let (center, radius) = (centerPosition sphere (time ray), getRadius sphere)
         (origin, direction) = toVecs ray
@@ -41,6 +42,7 @@ instance Hittable Sphere where
 
   boundingBox = bbox
 
+{-# INLINE getSphereUV #-}
 getSphereUV :: V3 -> (Double, Double)
 getSphereUV point = (u, v)
   where
