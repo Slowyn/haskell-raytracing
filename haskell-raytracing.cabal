@@ -91,6 +91,7 @@ executable haskell-raytracing
         Texture.Checker,
         Texture.SolidColor,
         Texture.Image,
+        Texture.Perlin,
         Scene
 
     -- LANGUAGE extensions used by modules in this package.

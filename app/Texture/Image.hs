@@ -1,4 +1,4 @@
-module Texture.Image where
+module Texture.Image (ImageTexture (..), mkImageTexture) where
 
 import Codec.Picture (Image (..), PixelRGB8 (..), convertRGB8, pixelAt, readImage)
 import Data.Ord (clamp)

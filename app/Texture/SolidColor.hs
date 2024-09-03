@@ -1,4 +1,4 @@
-module Texture.SolidColor where
+module Texture.SolidColor (SolidColor (..)) where
 
 import Texture (Texture (..))
 import Vec3 (V3)
