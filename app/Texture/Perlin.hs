@@ -12,10 +12,10 @@ pointCount :: Int
 pointCount = 256
 
 data Perlin = Perlin
-  { xPermutations :: V.Vector Int,
-    yPermutations :: V.Vector Int,
-    zPermutations :: V.Vector Int,
-    values :: V.Vector Double
+  { xPermutations :: !(V.Vector Int),
+    yPermutations :: !(V.Vector Int),
+    zPermutations :: !(V.Vector Int),
+    values :: !(V.Vector Double)
   }
   deriving (Show)
 
