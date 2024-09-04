@@ -54,7 +54,7 @@ noise perlin point = values perlin V.! idx
     i :: Int = xPermutations perlin V.! (floor (4 * x point) .&. 255)
     j :: Int = yPermutations perlin V.! (floor (4 * y point) .&. 255)
     k :: Int = zPermutations perlin V.! (floor (4 * z point) .&. 255)
-    idx :: Int = xor k $ xor i j
+    idx :: Int = i `xor` j `xor` k
 
 newtype NoiseTexture = NoiseTexture Perlin
 
