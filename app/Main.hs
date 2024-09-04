@@ -20,6 +20,7 @@ import System.Random.Stateful (StatefulGen, newIOGenM, uniformRM)
 import Text.Printf
 import Texture.Checker (mkCheckerTexture)
 import Texture.Image (mkImageTexture)
+import Texture.Perlin (mkNoiseTexture)
 import Texture.SolidColor (SolidColor (SolidColor))
 import Vec3 (Vec3 (..))
 
@@ -37,6 +38,7 @@ main = do
   gen <- newIOGenM (mkStdGen 2024)
   scene <- case selectedScene of
     0 -> finalScene width aspectRatio samplesPerPixel maxDepth 22 gen
+    1 -> perlinSpheresScene width aspectRatio samplesPerPixel maxDepth gen
     _ -> earthScene width aspectRatio samplesPerPixel maxDepth
   printf "SamplesPerPixel: %s\nMaxDepth: %s\nImage Width: %s\n" (show samplesPerPixel) (show maxDepth) (show width)
   image <- renderSceneIO scene gen
@@ -127,4 +129,32 @@ earthScene w aspectRatio samplesPerPixel maxDepth = do
   let earthSurface = Lambertian earthTexture
       globe = mkSomeObject (mkSphere (fromXYZ (0, 0, 0)) 2) earthSurface
       world = MkSomeWorld $ mkHittableList [globe]
+  pure $ mkScene camera world
+
+perlinSpheresScene :: (StatefulGen g IO) => Int -> Double -> Int -> Int -> g -> IO Scene
+perlinSpheresScene w aspectRatio samplesPerPixel maxDepth gen = do
+  let lookFrom = fromXYZ (13, 2, 3)
+      lookAt = fromXYZ (0, 0, 0)
+      vUp = fromXYZ (0, 1, 0)
+      vfov = 20
+      defocusAngle = 0
+      focusDist = 10
+      camera :: Camera
+      camera =
+        createCamera
+          w
+          aspectRatio
+          vfov
+          lookFrom
+          lookAt
+          vUp
+          defocusAngle
+          focusDist
+          samplesPerPixel
+          maxDepth
+  perlinTexture <- mkNoiseTexture gen
+  let perlinSurface = Lambertian perlinTexture
+      sphereGround = mkSomeObject (mkSphere (fromXYZ (0, -1000, 0)) 1000) perlinSurface
+      sphere1 = mkSomeObject (mkSphere (fromXYZ (0, 2, 0)) 2.0) perlinSurface
+      world = MkSomeWorld $ mkHittableList [sphereGround, sphere1]
   pure $ mkScene camera world

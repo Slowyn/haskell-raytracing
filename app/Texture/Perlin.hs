@@ -1,10 +1,11 @@
-module Texture.Perlin where
+module Texture.Perlin (NoiseTexture (..), mkNoiseTexture) where
 
 import Control.Monad.Primitive (PrimMonad)
 import Data.Bits (xor, (.&.))
 import Data.Vector qualified as V
 import Data.Vector.Mutable qualified as VM
 import System.Random.Stateful (StatefulGen, uniformRM)
+import Texture (Texture (..))
 import Vec3 (V3, Vec3 (..))
 
 pointCount :: Int
@@ -54,3 +55,16 @@ noise perlin point = values perlin V.! idx
     j :: Int = yPermutations perlin V.! (floor (4 * y point) .&. 255)
     k :: Int = zPermutations perlin V.! (floor (4 * z point) .&. 255)
     idx :: Int = xor k $ xor i j
+
+newtype NoiseTexture = NoiseTexture Perlin
+
+instance Show NoiseTexture where
+  show _ = "Noise Texture"
+
+instance Texture NoiseTexture where
+  value (NoiseTexture perlin) _u _v point = fromXYZ (1, 1, 1) .^ noise perlin point
+
+mkNoiseTexture :: (StatefulGen g m, PrimMonad m) => g -> m NoiseTexture
+mkNoiseTexture gen = do
+  perlin <- mkPerlin gen
+  pure $ NoiseTexture perlin
