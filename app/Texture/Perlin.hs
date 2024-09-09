@@ -84,15 +84,15 @@ noise perlin point = trilinearInterpolation c u' v' w'
             values perlin V.! (dx `xor` dy `xor` dz)
         )
 
-newtype NoiseTexture = NoiseTexture Perlin
+data NoiseTexture = NoiseTexture !Perlin !Double
 
 instance Show NoiseTexture where
   show _ = "Noise Texture"
 
 instance Texture NoiseTexture where
-  value (NoiseTexture perlin) _u _v point = fromXYZ (1, 1, 1) .^ noise perlin point
+  value (NoiseTexture perlin scale) _u _v point = fromXYZ (1, 1, 1) .^ noise perlin (point .^ scale)
 
-mkNoiseTexture :: (StatefulGen g m, PrimMonad m) => g -> m NoiseTexture
-mkNoiseTexture gen = do
+mkNoiseTexture :: (StatefulGen g m, PrimMonad m) => g -> Double -> m NoiseTexture
+mkNoiseTexture gen scale = do
   perlin <- mkPerlin gen
-  pure $ NoiseTexture perlin
+  pure $ NoiseTexture perlin scale

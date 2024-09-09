@@ -152,7 +152,7 @@ perlinSpheresScene w aspectRatio samplesPerPixel maxDepth gen = do
           focusDist
           samplesPerPixel
           maxDepth
-  perlinTexture <- mkNoiseTexture gen
+  perlinTexture <- mkNoiseTexture gen 4
   let perlinSurface = Lambertian perlinTexture
       sphereGround = mkSomeObject (mkSphere (fromXYZ (0, -1000, 0)) 1000) perlinSurface
       sphere1 = mkSomeObject (mkSphere (fromXYZ (0, 2, 0)) 2.0) perlinSurface
