@@ -62,11 +62,14 @@ trilinearInterpolation c u v w =
     c
 
 noise :: Perlin -> V3 -> Double
-noise perlin point = trilinearInterpolation c u v w
+noise perlin point = trilinearInterpolation c u' v' w'
   where
     u = x point - (fromIntegral . floor . x) point
     v = y point - (fromIntegral . floor . y) point
     w = z point - (fromIntegral . floor . z) point
+    u' = u * u * (3 - 2 * u)
+    v' = v * v * (3 - 2 * v)
+    w' = w * w * (3 - 2 * w)
     i :: Int = (floor . x) point
     j :: Int = (floor . y) point
     k :: Int = (floor . z) point
