@@ -2,6 +2,7 @@ module Texture.Perlin (NoiseTexture (..), mkNoiseTexture) where
 
 import Control.Monad.Primitive (PrimMonad)
 import Data.Bits (xor, (.&.))
+import Data.Massiv.Array qualified as MA
 import Data.Vector qualified as V
 import Data.Vector.Mutable qualified as VM
 import System.Random.Stateful (StatefulGen, uniformRM)
@@ -48,13 +49,37 @@ permute vec gen = do
     )
   V.unsafeFreeze mvec
 
+trilinearInterpolation :: MA.Array MA.P MA.Ix3 Double -> Double -> Double -> Double -> Double
+trilinearInterpolation c u v w =
+  MA.ifoldlS
+    ( \acc (i MA.:> j MA.:. k) cur -> do
+        let di = fromIntegral i * u + (1 - fromIntegral i) * (1 - u)
+            dj = fromIntegral j * v + (1 - fromIntegral j) * (1 - v)
+            dk = fromIntegral k * w + (1 - fromIntegral k) * (1 - w)
+        acc + (di * dj * dk * cur)
+    )
+    0.0
+    c
+
 noise :: Perlin -> V3 -> Double
-noise perlin point = values perlin V.! idx
+noise perlin point = trilinearInterpolation c u v w
   where
-    i :: Int = xPermutations perlin V.! (floor (4 * x point) .&. 255)
-    j :: Int = yPermutations perlin V.! (floor (4 * y point) .&. 255)
-    k :: Int = zPermutations perlin V.! (floor (4 * z point) .&. 255)
-    idx :: Int = i `xor` j `xor` k
+    u = x point - (fromIntegral . floor . x) point
+    v = y point - (fromIntegral . floor . y) point
+    w = z point - (fromIntegral . floor . z) point
+    i :: Int = (floor . x) point
+    j :: Int = (floor . y) point
+    k :: Int = (floor . z) point
+    c :: MA.Array MA.P MA.Ix3 Double =
+      MA.makeArray
+        MA.Seq
+        (MA.Sz3 2 2 2)
+        ( \(di MA.:> dj MA.:. dk) -> do
+            let dx = (i + di) .&. 255
+                dy = (j + dj) .&. 255
+                dz = (k + dk) .&. 255
+            values perlin V.! (dx `xor` dy `xor` dz)
+        )
 
 newtype NoiseTexture = NoiseTexture Perlin
 
