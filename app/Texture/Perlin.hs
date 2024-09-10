@@ -98,7 +98,7 @@ instance Show NoiseTexture where
   show _ = "Noise Texture"
 
 instance Texture NoiseTexture where
-  value (NoiseTexture perlin scale) _u _v point = fromXYZ (1, 1, 1) .^ turbulence perlin point 7
+  value (NoiseTexture perlin scale) _u _v point = fromXYZ (0.5, 0.5, 0.5) .^ (1 + sin (scale * z point + 10 * turbulence perlin point 7))
 
 mkNoiseTexture :: (StatefulGen g m, PrimMonad m) => Double -> g -> m NoiseTexture
 mkNoiseTexture scale gen = do
