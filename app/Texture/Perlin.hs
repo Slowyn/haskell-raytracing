@@ -86,13 +86,19 @@ noise perlin point = perlinInterpolation c u v w
             values perlin V.! (dx `xor` dy `xor` dz)
         )
 
+fstOf3 :: (a, b, c) -> a
+fstOf3 (v1, _, _) = v1
+
+turbulence :: Perlin -> V3 -> Int -> Double
+turbulence perlin point depth = abs . fstOf3 $ foldl (\(acc, p, weight) _ -> (acc + weight * noise perlin p, p .^ 2, weight * 0.5)) (0.0, point, 1.0) [0 .. depth]
+
 data NoiseTexture = NoiseTexture !Perlin !Double
 
 instance Show NoiseTexture where
   show _ = "Noise Texture"
 
 instance Texture NoiseTexture where
-  value (NoiseTexture perlin scale) _u _v point = fromXYZ (1, 1, 1) .^ 0.5 .^ (1.0 + noise perlin (point .^ scale))
+  value (NoiseTexture perlin scale) _u _v point = fromXYZ (1, 1, 1) .^ turbulence perlin point 7
 
 mkNoiseTexture :: (StatefulGen g m, PrimMonad m) => Double -> g -> m NoiseTexture
 mkNoiseTexture scale gen = do
