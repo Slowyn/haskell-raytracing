@@ -14,7 +14,7 @@ import Material.Metal (mkMetal)
 import Object (SomeObject, mkSomeObject)
 import Random (uniformVec3M)
 import Scene (Scene (..), SomeWorld (MkSomeWorld), mkScene, renderSceneIO)
-import Sphere (mkMovingSphere, mkSphere)
+import Shape.Sphere (mkMovingSphere, mkSphere)
 import System.Random (mkStdGen)
 import System.Random.Stateful (StatefulGen, newIOGenM, uniformRM)
 import Text.Printf
