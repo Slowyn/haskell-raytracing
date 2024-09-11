@@ -1,4 +1,4 @@
-module Lambertian (Lambertian (..)) where
+module Material.Lambertian (Lambertian (..)) where
 
 import HitRecord (HitRecord (..))
 import Material (Material (..))

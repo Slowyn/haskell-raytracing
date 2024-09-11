@@ -76,10 +76,6 @@ executable haskell-raytracing
         HittableList,
         Sphere,
         Random,
-        Material,
-        Lambertian,
-        Metal,
-        Dielectric,
         Optics,
         Object,
         FoldHittable,
@@ -92,6 +88,10 @@ executable haskell-raytracing
         Texture.SolidColor,
         Texture.Image,
         Texture.Perlin,
+        Material,
+        Material.Lambertian,
+        Material.Metal,
+        Material.Dielectric,
         Scene
 
     -- LANGUAGE extensions used by modules in this package.

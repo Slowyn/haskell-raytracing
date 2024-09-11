@@ -7,10 +7,10 @@ import Bvh (buildBvh)
 import Camera (Camera, CameraTrait (..))
 import Codec.Picture
 import Data.Time.Clock
-import Dielectric (Dielectric (..))
 import HittableList (mkHittableList)
-import Lambertian (Lambertian (..))
-import Metal (mkMetal)
+import Material.Dielectric (Dielectric (..))
+import Material.Lambertian (Lambertian (..))
+import Material.Metal (mkMetal)
 import Object (SomeObject, mkSomeObject)
 import Random (uniformVec3M)
 import Scene (Scene (..), SomeWorld (MkSomeWorld), mkScene, renderSceneIO)
