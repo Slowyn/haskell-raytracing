@@ -187,12 +187,19 @@ quadsScene w aspectRatio samplesPerPixel maxDepth = do
       rightBlue = Lambertian . SolidColor $ fromXYZ (0.2, 0.2, 1)
       upperOrange = Lambertian . SolidColor $ fromXYZ (1, 0.5, 0.0)
       lowerTeal = Lambertian . SolidColor $ fromXYZ (0.2, 0.8, 0.8)
-      world =
-        MkSomeWorld . mkHittableList $
-          [ mkSomeObject (mkQuad (fromXYZ (-3, -2, 5)) (fromXYZ (0, 0, -4)) (fromXYZ (0, 4, 0))) leftRed,
-            mkSomeObject (mkQuad (fromXYZ (-2, -2, 0)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 4, 0))) backGreen,
-            mkSomeObject (mkQuad (fromXYZ (3, -2, 1)) (fromXYZ (0, 0, 4)) (fromXYZ (0, 4, 0))) rightBlue,
-            mkSomeObject (mkQuad (fromXYZ (-2, 3, 1)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, 4))) upperOrange,
-            mkSomeObject (mkQuad (fromXYZ (-2, -3, 5)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, -4))) lowerTeal
-          ]
+      materials =
+        [ leftRed,
+          backGreen,
+          rightBlue,
+          upperOrange,
+          lowerTeal
+        ]
+      quads =
+        [ mkQuad (fromXYZ (-3, -2, 5)) (fromXYZ (0, 0, -4)) (fromXYZ (0, 4, 0)),
+          mkQuad (fromXYZ (-2, -2, 0)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 4, 0)),
+          mkQuad (fromXYZ (3, -2, 1)) (fromXYZ (0, 0, 4)) (fromXYZ (0, 4, 0)),
+          mkQuad (fromXYZ (-2, 3, 1)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, 4)),
+          mkQuad (fromXYZ (-2, -3, 5)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, -4))
+        ]
+      world = MkSomeWorld . mkHittableList $ map (uncurry mkSomeObject) (zip quads materials)
   pure $ mkScene camera world
