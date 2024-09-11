@@ -13,7 +13,7 @@ where
 import Axis (Axis (..))
 import Control.Applicative
 import Data.Foldable (maximumBy)
-import Interval (Interval (..), defaultInterval, mkInterval, mkInterval')
+import Interval (Interval (..), defaultInterval, expandInterval, intervalSize, mkInterval, mkInterval')
 import Ray (Ray, RayTrait (..))
 import Vec3 qualified as V
 
@@ -28,9 +28,9 @@ mkAabb = defaultAabb
 mkAabbIntervals :: Interval -> Interval -> Interval -> Aabb
 mkAabbIntervals xInterval yInterval zInterval =
   Aabb
-    { x = xInterval,
-      y = yInterval,
-      z = zInterval
+    { x = padToMinimum xInterval,
+      y = padToMinimum yInterval,
+      z = padToMinimum zInterval
     }
 
 mkAabbPoints :: V.V3 -> V.V3 -> Aabb
@@ -77,3 +77,9 @@ longestAxis bbox = axis
   where
     cmp a b = compare (snd a) (snd b)
     axis = fst . maximumBy cmp $ zip [X, Y, Z] $ [x, y, z] <*> pure bbox
+
+delta :: Double
+delta = 0.0001
+
+padToMinimum :: Interval -> Interval
+padToMinimum interval = if intervalSize interval < delta then expandInterval interval delta else interval

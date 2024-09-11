@@ -1,4 +1,4 @@
-module HitRecord (HitRecord (..), createHitRecord, solveFrontFaceNorm) where
+module HitRecord (HitRecord (..), mkHitRecord, solveFrontFaceNorm) where
 
 import Ray
 import Vec3
@@ -13,8 +13,8 @@ data HitRecord = HitRecord
   }
   deriving (Show, Eq)
 
-createHitRecord :: V3 -> V3 -> Double -> Bool -> Double -> Double -> HitRecord
-createHitRecord p normal t frontFace u v =
+mkHitRecord :: V3 -> V3 -> Double -> Bool -> Double -> Double -> HitRecord
+mkHitRecord p normal t frontFace u v =
   HitRecord
     { p,
       normal,

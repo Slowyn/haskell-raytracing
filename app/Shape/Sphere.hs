@@ -6,10 +6,10 @@ module Shape.Sphere (Sphere (..), mkSphere, mkMovingSphere) where
 
 import Aabb (Aabb, combineAabbs, mkAabbPoints)
 import Control.Applicative
-import Control.Monad
-import HitRecord (createHitRecord, solveFrontFaceNorm)
+import HitRecord (mkHitRecord, solveFrontFaceNorm)
 import Hittable (Hittable (..))
 import Interval (Interval (..))
+import Lib (ensure)
 import Ray (Ray (..), RayTrait (..))
 import Vec3 (V3, Vec3 (..))
 
@@ -38,7 +38,7 @@ instance Hittable Sphere where
         outwardNorm = (p <-> center) /^ radius
         (frontFace, normal) = solveFrontFaceNorm ray outwardNorm
         (u, v) = getSphereUV outwardNorm
-    pure $ createHitRecord p normal t frontFace u v
+    pure $ mkHitRecord p normal t frontFace u v
 
   boundingBox = bbox
 
@@ -59,9 +59,6 @@ findClosestRoot tMin tMax root1 root2 = ensure valueInTRange root1 <|> ensure va
 -- tmin < t < tmax
 valueInRange :: Double -> Double -> Double -> Bool
 valueInRange tMin tMax t = tMin < t && t < tMax
-
-ensure :: (Alternative f) => (a -> Bool) -> a -> f a
-ensure p a = a <$ guard (p a)
 
 mkSphere :: V3 -> Double -> Sphere
 mkSphere center r = Sphere {center, radius, bbox = mkAabbPoints (center <-> rVec) (center <+> rVec)}
