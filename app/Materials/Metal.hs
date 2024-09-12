@@ -7,7 +7,7 @@ import Random (uniformUnitVec3M)
 import Ray (Ray (..), RayTrait (..), mkRay)
 import Vec3 (V3, Vec3 (..))
 
-data Metal = Metal {albedo :: V3, fuzz :: Double} deriving (Show)
+data Metal = Metal {albedo :: !V3, fuzz :: !Double} deriving (Show)
 
 instance Material Metal where
   scatterM material rayIn hitRecord gen = do
@@ -16,7 +16,7 @@ instance Material Metal where
     let fuzzReflected = reflected <+> fuzzVec
     let scattered = mkRay (p hitRecord) fuzzReflected (time rayIn)
     let attenuation = albedo material
-    return $ if getDirection scattered .* normal hitRecord > 0 then Just (attenuation, scattered) else Nothing
+    pure $ if getDirection scattered .* normal hitRecord > 0 then Just (attenuation, scattered) else Nothing
 
 mkMetal :: V3 -> Double -> Metal
 mkMetal albedo fuzz = Metal {albedo, fuzz}

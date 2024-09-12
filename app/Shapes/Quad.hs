@@ -20,6 +20,7 @@ data Quad = Quad
   deriving (Show, Eq)
 
 instance Hittable Quad where
+  {-# INLINE hit #-}
   hit quad rayIn rayT = do
     let maybeDenom = unNormal quad .* getDirection rayIn
     denom <- ensure ((> 1e-8) . abs) maybeDenom

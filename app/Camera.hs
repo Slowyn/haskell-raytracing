@@ -48,18 +48,19 @@ rayColorBackground ray = color
     color = fromXYZ (1.0, 1.0, 1.0) .^ (1 - a) <+> fromXYZ (0.5, 0.7, 1.0) .^ a
 
 rayColorM :: (StatefulGen g m, FoldHittable w) => Ray -> w -> Int -> g -> m V3
-rayColorM ray world depth gen = case nearestHit world ray (Interval 0.001 infinity) of
-  Just (hitRecord, MkSomeMaterial material) -> do
-    if depth <= 0
-      then pure $ fromXYZ (0, 0, 0)
-      else do
+rayColorM rayIn world maxDepth gen = go rayIn maxDepth
+  where
+    {-# INLINE go #-}
+    go _ 0 = pure origin
+    go ray depth = case nearestHit world ray (Interval 0.001 infinity) of
+      Just (hitRecord, MkSomeMaterial material) -> do
         scatterResult <- scatterM material ray hitRecord gen
         case scatterResult of
           Just (attenuation, scattered) -> do
-            newColor <- rayColorM scattered world (depth - 1) gen
+            newColor <- go scattered (depth - 1)
             pure $ attenuation <.> newColor
-          Nothing -> pure $ fromXYZ (0, 0, 0)
-  Nothing -> return $ rayColorBackground ray
+          Nothing -> pure origin
+      Nothing -> pure $ rayColorBackground ray
 
 calculateImageHeight :: Int -> Double -> Int
 calculateImageHeight width aspectRatio = max 1 imageHeight
@@ -155,7 +156,7 @@ instance CameraTrait Camera where
     rays <- V.generateM samplesPerPixel (\_ -> getRayM camera x y gen)
     colors <- V.mapM (\ray -> rayColorM ray world maxDepth gen) rays
     let averageColor = V.foldl' (<>) mempty colors .^ pixelSamplesScale
-    return $ vecToPixel averageColor
+    pure $ vecToPixel averageColor
 
   renderM :: (StatefulGen g IO, FoldHittable w) => Camera -> w -> g -> IO (Image PixelRGB8)
   renderM camera world gen = do

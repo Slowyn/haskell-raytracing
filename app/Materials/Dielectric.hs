@@ -11,7 +11,7 @@ newtype Dielectric = Dielectric {refractionIndex :: Double} deriving (Show)
 
 instance Material Dielectric where
   scatterM material rayIn hitRecord gen = do
-    randomValue <- uniformRM (0.0, 1.0 :: Double) gen
+    randomValue :: Double <- uniformRM (0.0, 1.0) gen
     let attenuation = fromXYZ (1, 1, 1)
         ri = if frontFace hitRecord then 1 / refractionIndex material else refractionIndex material
         unitDirection = normalize (getDirection rayIn)
@@ -24,4 +24,4 @@ instance Material Dielectric where
             then reflect unitDirection (normal hitRecord)
             else refract unitDirection (normal hitRecord) ri
         scattered = mkRay (p hitRecord) direction (time rayIn)
-    return $ Just (attenuation, scattered)
+    pure $ Just (attenuation, scattered)
