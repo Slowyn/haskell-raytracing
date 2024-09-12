@@ -1,4 +1,4 @@
-module Texture.Perlin (NoiseTexture (..), mkNoiseTexture) where
+module Textures.Perlin (NoiseTexture (..), mkNoiseTexture) where
 
 import Control.Monad.Primitive (PrimMonad)
 import Data.Bits (xor, (.&.))

@@ -1,4 +1,4 @@
-module Material.Dielectric (Dielectric (..)) where
+module Materials.Dielectric (Dielectric (..)) where
 
 import HitRecord (HitRecord (..))
 import Material (Material (..))

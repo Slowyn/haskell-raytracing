@@ -1,4 +1,4 @@
-module Shape.Quad (Quad (..), mkQuad) where
+module Shapes.Quad (Quad (..), mkQuad) where
 
 import Aabb (Aabb (..), combineAabbs, mkAabbPoints)
 import HitRecord (mkHitRecord, solveFrontFaceNorm)
@@ -9,13 +9,13 @@ import Ray (RayTrait (..), at)
 import Vec3 (V3, Vec3 (..))
 
 data Quad = Quad
-  { unQ :: V3,
-    unU :: V3,
-    unV :: V3,
-    unW :: V3,
-    unBbox :: Aabb,
-    unNormal :: V3,
-    unD :: Double
+  { unQ :: !V3,
+    unU :: !V3,
+    unV :: !V3,
+    unW :: !V3,
+    unBbox :: !Aabb,
+    unNormal :: !V3,
+    unD :: !Double
   }
   deriving (Show, Eq)
 

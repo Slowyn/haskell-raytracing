@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
-module Shape.Sphere (Sphere (..), mkSphere, mkMovingSphere) where
+module Shapes.Sphere (Sphere (..), mkSphere, mkMovingSphere) where
 
 import Aabb (Aabb, combineAabbs, mkAabbPoints)
 import Control.Applicative

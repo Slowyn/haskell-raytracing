@@ -1,7 +1,7 @@
-module Texture.Checker (CheckerTexture (..), mkCheckerTexture) where
+module Textures.Checker (CheckerTexture (..), mkCheckerTexture) where
 
 import Texture (Texture (..))
-import Texture.SolidColor (SolidColor)
+import Textures.SolidColor (SolidColor)
 import Vec3
 
 data CheckerTexture = CheckerTexture !SolidColor !SolidColor !Double deriving (Show, Eq)

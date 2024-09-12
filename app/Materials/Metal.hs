@@ -1,4 +1,4 @@
-module Material.Metal (Metal (..), mkMetal) where
+module Materials.Metal (Metal (..), mkMetal) where
 
 import HitRecord (HitRecord (..))
 import Material (Material (..))
