@@ -14,6 +14,7 @@ import Materials.Metal (mkMetal)
 import Object (SomeObject, mkSomeObject)
 import Random (uniformVec3M)
 import Scene (Scene (..), SomeWorld (MkSomeWorld), mkScene, renderSceneIO)
+import Shapes.Ellipse (mkEllipse)
 import Shapes.Quad (mkQuad)
 import Shapes.Sphere (mkMovingSphere, mkSphere)
 import Shapes.Tri (mkTri)
@@ -192,7 +193,7 @@ quadsScene w aspectRatio samplesPerPixel maxDepth = do
         map
           (uncurry mkSomeObject)
           [ (mkQuad (fromXYZ (-3, -2, 5)) (fromXYZ (0, 0, -4)) (fromXYZ (0, 4, 0)), leftRed),
-            (mkQuad (fromXYZ (-2, -2, 0)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 4, 0)), backGreen),
+            -- (mkQuad (fromXYZ (-2, -2, 0)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 4, 0)), backGreen),
             (mkQuad (fromXYZ (3, -2, 1)) (fromXYZ (0, 0, 4)) (fromXYZ (0, 4, 0)), rightBlue)
             -- (mkQuad (fromXYZ (-2, 3, 1)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, 4)), upperOrange),
             -- (mkQuad (fromXYZ (-2, -3, 5)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, -4)), lowerTeal)
@@ -203,5 +204,7 @@ quadsScene w aspectRatio samplesPerPixel maxDepth = do
           [ (mkTri (fromXYZ (-2, 3, 1)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, 4)), upperOrange),
             (mkTri (fromXYZ (-2, -3, 5)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, -4)), lowerTeal)
           ]
-      world = MkSomeWorld . mkHittableList $ quads ++ tris
+      ellipses =
+        [mkSomeObject (mkEllipse (fromXYZ (-2, -2, 0)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 4, 0))) backGreen]
+      world = MkSomeWorld . mkHittableList $ quads ++ tris ++ ellipses
   pure $ mkScene camera world

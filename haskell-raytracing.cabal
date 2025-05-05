@@ -96,6 +96,7 @@ executable haskell-raytracing
         Shapes.Primitive2D,
         Shapes.Quad,
         Shapes.Tri,
+        Shapes.Ellipse,
         Scene
 
     -- LANGUAGE extensions used by modules in this package.
