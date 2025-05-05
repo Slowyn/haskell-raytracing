@@ -10,7 +10,8 @@ instance UvTrait Ellipse where
   getUV _ alpha beta = do
     let u = alpha - 0.5
         v = beta - 0.5
-    guard ((u * u + v * v) <= 0.5 * 0.5)
+        r = 0.5 * 0.5
+    guard ((u * u + v * v) <= r)
     pure (alpha, beta)
 
 -- pure (alpha, beta)
