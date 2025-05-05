@@ -93,7 +93,9 @@ executable haskell-raytracing
         Materials.Metal,
         Materials.Dielectric,
         Shapes.Sphere,
+        Shapes.Primitive2D,
         Shapes.Quad,
+        Shapes.Tri,
         Scene
 
     -- LANGUAGE extensions used by modules in this package.

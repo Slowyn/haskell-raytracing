@@ -82,4 +82,7 @@ delta :: Double
 delta = 0.0001
 
 padToMinimum :: Interval -> Interval
-padToMinimum interval = if intervalSize interval < delta then expandInterval interval delta else interval
+padToMinimum interval =
+  if intervalSize interval < delta
+    then expandInterval interval delta
+    else interval

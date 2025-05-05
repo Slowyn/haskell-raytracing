@@ -16,6 +16,7 @@ import Random (uniformVec3M)
 import Scene (Scene (..), SomeWorld (MkSomeWorld), mkScene, renderSceneIO)
 import Shapes.Quad (mkQuad)
 import Shapes.Sphere (mkMovingSphere, mkSphere)
+import Shapes.Tri (mkTri)
 import System.Random (mkStdGen)
 import System.Random.Stateful (StatefulGen, newIOGenM, uniformRM)
 import Text.Printf
@@ -187,19 +188,20 @@ quadsScene w aspectRatio samplesPerPixel maxDepth = do
       rightBlue = Lambertian . SolidColor $ fromXYZ (0.2, 0.2, 1)
       upperOrange = Lambertian . SolidColor $ fromXYZ (1, 0.5, 0.0)
       lowerTeal = Lambertian . SolidColor $ fromXYZ (0.2, 0.8, 0.8)
-      materials =
-        [ leftRed,
-          backGreen,
-          rightBlue,
-          upperOrange,
-          lowerTeal
-        ]
       quads =
-        [ mkQuad (fromXYZ (-3, -2, 5)) (fromXYZ (0, 0, -4)) (fromXYZ (0, 4, 0)),
-          mkQuad (fromXYZ (-2, -2, 0)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 4, 0)),
-          mkQuad (fromXYZ (3, -2, 1)) (fromXYZ (0, 0, 4)) (fromXYZ (0, 4, 0)),
-          mkQuad (fromXYZ (-2, 3, 1)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, 4)),
-          mkQuad (fromXYZ (-2, -3, 5)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, -4))
-        ]
-      world = MkSomeWorld . mkHittableList $ map (uncurry mkSomeObject) (zip quads materials)
+        map
+          (uncurry mkSomeObject)
+          [ (mkQuad (fromXYZ (-3, -2, 5)) (fromXYZ (0, 0, -4)) (fromXYZ (0, 4, 0)), leftRed),
+            (mkQuad (fromXYZ (-2, -2, 0)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 4, 0)), backGreen),
+            (mkQuad (fromXYZ (3, -2, 1)) (fromXYZ (0, 0, 4)) (fromXYZ (0, 4, 0)), rightBlue)
+            -- (mkQuad (fromXYZ (-2, 3, 1)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, 4)), upperOrange),
+            -- (mkQuad (fromXYZ (-2, -3, 5)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, -4)), lowerTeal)
+          ]
+      tris =
+        map
+          (uncurry mkSomeObject)
+          [ (mkTri (fromXYZ (-2, 3, 1)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, 4)), upperOrange),
+            (mkTri (fromXYZ (-2, -3, 5)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, -4)), lowerTeal)
+          ]
+      world = MkSomeWorld . mkHittableList $ quads ++ tris
   pure $ mkScene camera world
