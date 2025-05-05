@@ -192,11 +192,11 @@ quadsScene w aspectRatio samplesPerPixel maxDepth = do
       quads =
         map
           (uncurry mkSomeObject)
-          [ (mkQuad (fromXYZ (-3, -2, 5)) (fromXYZ (0, 0, -4)) (fromXYZ (0, 4, 0)), leftRed),
-            -- (mkQuad (fromXYZ (-2, -2, 0)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 4, 0)), backGreen),
-            (mkQuad (fromXYZ (3, -2, 1)) (fromXYZ (0, 0, 4)) (fromXYZ (0, 4, 0)), rightBlue)
-            -- (mkQuad (fromXYZ (-2, 3, 1)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, 4)), upperOrange),
-            -- (mkQuad (fromXYZ (-2, -3, 5)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, -4)), lowerTeal)
+          [ (mkQuad (fromXYZ (-3, -2, 5)) (fromXYZ (0, 0, -4)) (fromXYZ (0, 4, 0)), leftRed)
+          -- (mkQuad (fromXYZ (-2, -2, 0)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 4, 0)), backGreen),
+          -- (mkQuad (fromXYZ (3, -2, 1)) (fromXYZ (0, 0, 4)) (fromXYZ (0, 4, 0)), rightBlue)
+          -- (mkQuad (fromXYZ (-2, 3, 1)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, 4)), upperOrange),
+          -- (mkQuad (fromXYZ (-2, -3, 5)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, -4)), lowerTeal)
           ]
       tris =
         map
@@ -205,6 +205,8 @@ quadsScene w aspectRatio samplesPerPixel maxDepth = do
             (mkTri (fromXYZ (-2, -3, 5)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, -4)), lowerTeal)
           ]
       ellipses =
-        [mkSomeObject (mkEllipse (fromXYZ (-2, -2, 0)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 4, 0))) backGreen]
+        [ mkSomeObject (mkEllipse (fromXYZ (-2, -2, 0)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 4, 0))) backGreen,
+          mkSomeObject (mkEllipse (fromXYZ (3, -2, 1)) (fromXYZ (0, 0, 4)) (fromXYZ (0, 4, 0))) rightBlue
+        ]
       world = MkSomeWorld . mkHittableList $ quads ++ tris ++ ellipses
   pure $ mkScene camera world
