@@ -14,8 +14,6 @@ instance UvTrait Ellipse where
     guard ((u * u + v * v) <= r)
     pure (alpha, beta)
 
--- pure (alpha, beta)
-
 mkEllipse :: V3 -> V3 -> V3 -> Primitive2D Ellipse
 mkEllipse q u v =
   Primitive2D
