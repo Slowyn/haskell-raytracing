@@ -92,6 +92,7 @@ executable haskell-raytracing
         Materials.Lambertian,
         Materials.Metal,
         Materials.Dielectric,
+        Materials.DiffuseLight,
         Shapes.Sphere,
         Shapes.Primitive2D,
         Shapes.Quad,

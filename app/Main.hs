@@ -9,6 +9,7 @@ import Codec.Picture
 import Data.Time.Clock
 import HittableList (mkHittableList)
 import Materials.Dielectric (Dielectric (..))
+import Materials.DiffuseLight (DiffuseLight (..))
 import Materials.Lambertian (Lambertian (..))
 import Materials.Metal (mkMetal)
 import Object (SomeObject, mkSomeObject)
@@ -34,7 +35,7 @@ main :: IO ()
 main = do
   t1 <- getCurrentTime
   printf "Program started at %s\n" (show t1)
-  let selectedScene = 2
+  let selectedScene = 3
       aspectRatio = 16.0 / 9.0
       samplesPerPixel = 100
       maxDepth = 50
@@ -43,6 +44,7 @@ main = do
     0 -> finalScene width aspectRatio samplesPerPixel maxDepth 22 gen
     1 -> perlinSpheresScene width aspectRatio samplesPerPixel maxDepth gen
     2 -> quadsScene width aspectRatio samplesPerPixel maxDepth
+    3 -> simpleLight width aspectRatio samplesPerPixel maxDepth gen
     _ -> earthScene width aspectRatio samplesPerPixel maxDepth
   printf "SamplesPerPixel: %s\nMaxDepth: %s\nImage Width: %s\n" (show samplesPerPixel) (show maxDepth) (show width)
   image <- renderSceneIO scene gen
@@ -87,6 +89,7 @@ finalScene w aspectRatio samplesPerPixel maxDepth n gen = do
           focusDist
           samplesPerPixel
           maxDepth
+          (fromXYZ (0.7, 0.8, 1.0))
       checker =
         mkCheckerTexture
           (SolidColor $ fromXYZ (0.2, 0.3, 0.1))
@@ -129,6 +132,7 @@ earthScene w aspectRatio samplesPerPixel maxDepth = do
           focusDist
           samplesPerPixel
           maxDepth
+          (fromXYZ (0.7, 0.8, 1.0))
   earthTexture <- mkImageTexture "assets/earthmap.jpg"
   let earthSurface = Lambertian earthTexture
       globe = mkSomeObject (mkSphere (fromXYZ (0, 0, 0)) 2) earthSurface
@@ -156,6 +160,7 @@ perlinSpheresScene w aspectRatio samplesPerPixel maxDepth gen = do
           focusDist
           samplesPerPixel
           maxDepth
+          (fromXYZ (0.7, 0.8, 1.0))
   perlinTexture <- mkNoiseTexture 4 gen
   let perlinSurface = Lambertian perlinTexture
       sphereGround = mkSomeObject (mkSphere (fromXYZ (0, -1000, 0)) 1000) perlinSurface
@@ -184,6 +189,7 @@ quadsScene w aspectRatio samplesPerPixel maxDepth = do
           focusDist
           samplesPerPixel
           maxDepth
+          (fromXYZ (0.7, 0.8, 1.0))
   let leftRed = Lambertian . SolidColor $ fromXYZ (1, 0.2, 0.2)
       backGreen = Lambertian . SolidColor $ fromXYZ (0.2, 1, 0.2)
       rightBlue = Lambertian . SolidColor $ fromXYZ (0.2, 0.2, 1)
@@ -193,7 +199,7 @@ quadsScene w aspectRatio samplesPerPixel maxDepth = do
         map
           (uncurry mkSomeObject)
           [ (mkQuad (fromXYZ (-3, -2, 5)) (fromXYZ (0, 0, -4)) (fromXYZ (0, 4, 0)), leftRed)
-          -- (mkQuad (fromXYZ (-2, -2, 0)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 4, 0)), backGreen),
+          -- (mkQuad (fromXYZ (-2, -2, 0)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 4, 0)), backGreen)
           -- (mkQuad (fromXYZ (3, -2, 1)) (fromXYZ (0, 0, 4)) (fromXYZ (0, 4, 0)), rightBlue)
           -- (mkQuad (fromXYZ (-2, 3, 1)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, 4)), upperOrange),
           -- (mkQuad (fromXYZ (-2, -3, 5)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 0, -4)), lowerTeal)
@@ -206,7 +212,39 @@ quadsScene w aspectRatio samplesPerPixel maxDepth = do
           ]
       ellipses =
         [ mkSomeObject (mkEllipse (fromXYZ (-2, -2, 0)) (fromXYZ (4, 0, 0)) (fromXYZ (0, 4, 0))) backGreen,
-          mkSomeObject (mkEllipse (fromXYZ (3, -2, 1)) (fromXYZ (0, 0, 4)) (fromXYZ (0, 4, 0))) rightBlue
+          mkSomeObject (mkEllipse (fromXYZ (3, -2, 1)) (fromXYZ (0, 0, 4)) (fromXYZ (0, 4, 0))) rightBlue,
+          mkSomeObject (mkEllipse (fromXYZ (-2, -2, 3)) (fromXYZ (2, 0, 0)) (fromXYZ (0, 2, 0))) rightBlue
         ]
       world = MkSomeWorld . mkHittableList $ quads ++ tris ++ ellipses
+  pure $ mkScene camera world
+
+simpleLight :: (StatefulGen g IO) => Int -> Double -> Int -> Int -> g -> IO Scene
+simpleLight w aspectRatio samplesPerPixel maxDepth gen = do
+  let lookFrom = fromXYZ (26, 3, 6)
+      lookAt = fromXYZ (0, 2, 0)
+      vUp = fromXYZ (0, 1, 0)
+      vfov = 20
+      defocusAngle = 0
+      focusDist = 10
+      camera :: Camera
+      camera =
+        createCamera
+          w
+          aspectRatio
+          vfov
+          lookFrom
+          lookAt
+          vUp
+          defocusAngle
+          focusDist
+          samplesPerPixel
+          maxDepth
+          (fromXYZ (0.0, 0.0, 0.0))
+  perlinTexture <- mkNoiseTexture 4 gen
+  let perlinSurface = Lambertian perlinTexture
+      sphereGround = mkSomeObject (mkSphere (fromXYZ (0, -1000, 0)) 1000) perlinSurface
+      sphere1 = mkSomeObject (mkSphere (fromXYZ (0, 2, 0)) 2.0) perlinSurface
+      diffLight = DiffuseLight $ SolidColor (fromXYZ (4, 4, 4))
+      lightSphere = mkSomeObject (mkQuad (fromXYZ (3, 1, -2)) (fromXYZ (2, 0, 0)) (fromXYZ (0, 2, 0))) diffLight
+      world = MkSomeWorld $ mkHittableList [sphereGround, sphere1, lightSphere]
   pure $ mkScene camera world
