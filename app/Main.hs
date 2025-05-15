@@ -245,6 +245,7 @@ simpleLight w aspectRatio samplesPerPixel maxDepth gen = do
       sphereGround = mkSomeObject (mkSphere (fromXYZ (0, -1000, 0)) 1000) perlinSurface
       sphere1 = mkSomeObject (mkSphere (fromXYZ (0, 2, 0)) 2.0) perlinSurface
       diffLight = DiffuseLight $ SolidColor (fromXYZ (4, 4, 4))
-      lightSphere = mkSomeObject (mkQuad (fromXYZ (3, 1, -2)) (fromXYZ (2, 0, 0)) (fromXYZ (0, 2, 0))) diffLight
-      world = MkSomeWorld $ mkHittableList [sphereGround, sphere1, lightSphere]
+      lightSource1 = mkSomeObject (mkTri (fromXYZ (3, 1, -2)) (fromXYZ (2, 0, 0)) (fromXYZ (0, 2, 0))) diffLight
+      lightSource2 = mkSomeObject (mkSphere (fromXYZ (0, 7, 0)) 2) diffLight
+      world = MkSomeWorld $ mkHittableList [sphereGround, sphere1, lightSource1, lightSource2]
   pure $ mkScene camera world
