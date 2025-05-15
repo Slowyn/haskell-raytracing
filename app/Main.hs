@@ -35,9 +35,9 @@ main :: IO ()
 main = do
   t1 <- getCurrentTime
   printf "Program started at %s\n" (show t1)
-  let selectedScene = 3
+  let selectedScene = 4
       aspectRatio = 16.0 / 9.0
-      samplesPerPixel = 100
+      samplesPerPixel = 200
       maxDepth = 50
   gen <- newIOGenM (mkStdGen 2024)
   scene <- case selectedScene of
@@ -45,6 +45,7 @@ main = do
     1 -> perlinSpheresScene width aspectRatio samplesPerPixel maxDepth gen
     2 -> quadsScene width aspectRatio samplesPerPixel maxDepth
     3 -> simpleLight width aspectRatio samplesPerPixel maxDepth gen
+    4 -> cornellBox width aspectRatio samplesPerPixel maxDepth gen
     _ -> earthScene width aspectRatio samplesPerPixel maxDepth
   printf "SamplesPerPixel: %s\nMaxDepth: %s\nImage Width: %s\n" (show samplesPerPixel) (show maxDepth) (show width)
   image <- renderSceneIO scene gen
@@ -248,4 +249,43 @@ simpleLight w aspectRatio samplesPerPixel maxDepth gen = do
       lightSource1 = mkSomeObject (mkTri (fromXYZ (3, 1, -2)) (fromXYZ (2, 0, 0)) (fromXYZ (0, 2, 0))) diffLight
       lightSource2 = mkSomeObject (mkSphere (fromXYZ (0, 7, 0)) 2) diffLight
       world = MkSomeWorld $ mkHittableList [sphereGround, sphere1, lightSource1, lightSource2]
+  pure $ mkScene camera world
+
+cornellBox :: (StatefulGen g IO) => Int -> Double -> Int -> Int -> g -> IO Scene
+cornellBox w aspectRatio samplesPerPixel maxDepth gen = do
+  let lookFrom = fromXYZ (278, 278, -800)
+      lookAt = fromXYZ (278, 278, 0)
+      vUp = fromXYZ (0, 1, 0)
+      vfov = 40
+      defocusAngle = 0
+      focusDist = 10
+      camera :: Camera
+      camera =
+        createCamera
+          w
+          aspectRatio
+          vfov
+          lookFrom
+          lookAt
+          vUp
+          defocusAngle
+          focusDist
+          samplesPerPixel
+          maxDepth
+          (fromXYZ (0.0, 0.0, 0.0))
+  let red = Lambertian . SolidColor $ fromXYZ (0.65, 0.05, 0.05)
+      white = Lambertian . SolidColor $ fromXYZ (0.73, 0.73, 0.73)
+      green = Lambertian . SolidColor $ fromXYZ (0.12, 0.45, 0.15)
+      light = DiffuseLight . SolidColor $ fromXYZ (15, 15, 15)
+      room =
+        map
+          (uncurry mkSomeObject)
+          [ (mkQuad (fromXYZ (555, 0, 0)) (fromXYZ (0, 555, 0)) (fromXYZ (0, 0, 555)), green),
+            (mkQuad (fromXYZ (0, 0, 0)) (fromXYZ (0, 555, 0)) (fromXYZ (0, 0, 555)), red),
+            (mkQuad (fromXYZ (0, 0, 0)) (fromXYZ (555, 0, 0)) (fromXYZ (0, 0, 555)), white),
+            (mkQuad (fromXYZ (555, 555, 555)) (fromXYZ (-555, 0, 0)) (fromXYZ (0, 0, -555)), white),
+            (mkQuad (fromXYZ (0, 0, 555)) (fromXYZ (555, 0, 0)) (fromXYZ (0, 555, 0)), white)
+          ]
+      lights = [mkSomeObject (mkQuad (fromXYZ (343, 554, 332)) (fromXYZ (-130, 0, 0)) (fromXYZ (0, 0, -105))) light]
+      world = MkSomeWorld $ buildBvh (room ++ lights) 0
   pure $ mkScene camera world
