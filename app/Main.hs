@@ -16,7 +16,7 @@ import Object (SomeObject, mkSomeObject)
 import Random (uniformVec3M)
 import Scene (Scene (..), SomeWorld (MkSomeWorld), mkScene, renderSceneIO)
 import Shapes.Ellipse (mkEllipse)
-import Shapes.Quad (mkQuad)
+import Shapes.Quad (mkBox, mkQuad)
 import Shapes.Sphere (mkMovingSphere, mkSphere)
 import Shapes.Tri (mkTri)
 import System.Random (mkStdGen)
@@ -287,5 +287,7 @@ cornellBox w aspectRatio samplesPerPixel maxDepth gen = do
             (mkQuad (fromXYZ (0, 0, 555)) (fromXYZ (555, 0, 0)) (fromXYZ (0, 555, 0)), white)
           ]
       lights = [mkSomeObject (mkQuad (fromXYZ (343, 554, 332)) (fromXYZ (-130, 0, 0)) (fromXYZ (0, 0, -105))) light]
-      world = MkSomeWorld $ buildBvh (room ++ lights) 0
+      box1 = map (uncurry mkSomeObject . (,white)) (mkBox (fromXYZ (130, 0, 65)) (fromXYZ (295, 165, 230)))
+      box2 = map (uncurry mkSomeObject . (,green)) (mkBox (fromXYZ (265, 0, 295)) (fromXYZ (430, 330, 460)))
+      world = MkSomeWorld $ buildBvh (room ++ lights ++ box1 ++ box2) 0
   pure $ mkScene camera world
